@@ -1,0 +1,24 @@
+plugins {
+  id "com.github.johnrengelman.shadow" version "4.0.3"
+  id "java"
+}
+
+ext.mainClass = "net.prominic.groovyls.GroovyLanguageServer"
+
+tasks.build.dependsOn tasks.shadowJar
+
+shadowJar {
+	manifest {
+		attributes "Main-Class": "net.prominic.groovyls.GroovyLanguageServer"
+	}
+}
+
+repositories  {
+	mavenCentral()
+}
+
+dependencies {
+	compile "org.eclipse.lsp4j:org.eclipse.lsp4j:0.2.0"
+	compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.2.0"
+	compile "org.codehaus.groovy:groovy-all:2.5.4"
+}
