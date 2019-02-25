@@ -69,6 +69,7 @@ public class GroovyLanguageServer implements LanguageServer, LanguageClientAware
         serverCapabilities.setReferencesProvider(true);
         serverCapabilities.setDefinitionProvider(true);
         serverCapabilities.setHoverProvider(true);
+        serverCapabilities.setRenameProvider(true);
 
         InitializeResult initializeResult = new InitializeResult(serverCapabilities);
         return CompletableFuture.completedFuture(initializeResult);

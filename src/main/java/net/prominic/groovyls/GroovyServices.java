@@ -60,8 +60,10 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
+import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.WorkspaceSymbolParams;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -77,7 +79,9 @@ import net.prominic.groovyls.providers.DefinitionProvider;
 import net.prominic.groovyls.providers.DocumentSymbolProvider;
 import net.prominic.groovyls.providers.HoverProvider;
 import net.prominic.groovyls.providers.ReferenceProvider;
+import net.prominic.groovyls.providers.RenameProvider;
 import net.prominic.groovyls.providers.WorkspaceSymbolProvider;
+import net.prominic.groovyls.util.FileContentsTracker;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class GroovyServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
@@ -97,7 +101,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private Path srcMainJavaPath;
 	private Path srcTestGroovyPath;
 	private Path srcTestJavaPath;
-	private Map<URI, String> openFiles = new HashMap<>();
+	private FileContentsTracker fileContentsTracker = new FileContentsTracker();
 
 	public GroovyServices() {
 		try {
@@ -127,27 +131,33 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
+		fileContentsTracker.didOpen(params);
+
 		URI uri = URI.create(params.getTextDocument().getUri());
-		openFiles.put(uri, params.getTextDocument().getText());
 		compile(Collections.singleton(uri));
+
 		visitAST();
 	}
 
 	@Override
 	public void didChange(DidChangeTextDocumentParams params) {
-		URI uri = URI.create(params.getTextDocument().getUri());
 		createCompilationUnit();
-		openFiles.put(uri, params.getContentChanges().get(0).getText());
+
+		fileContentsTracker.didChange(params);
+
+		URI uri = URI.create(params.getTextDocument().getUri());
 		compile(Collections.singleton(uri));
+
 		visitAST();
 	}
 
 	@Override
 	public void didClose(DidCloseTextDocumentParams params) {
-		URI uri = URI.create(params.getTextDocument().getUri());
-		openFiles.remove(uri);
 		createCompilationUnit();
+
+		URI uri = URI.create(params.getTextDocument().getUri());
 		compile(Collections.singleton(uri));
+
 		visitAST();
 	}
 
@@ -207,6 +217,12 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		return provider.provideWorkspaceSymbols(params.getQuery());
 	}
 
+	@Override
+	public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
+		RenameProvider provider = new RenameProvider(astVisitor, fileContentsTracker);
+		return provider.provideRename(params);
+	}
+
 	// --- INTERNAL
 
 	private void visitAST() {
@@ -233,9 +249,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		addDirectoryToCompilationUnit(srcMainJavaPath, false, true);
 		addDirectoryToCompilationUnit(srcTestGroovyPath, true, true);
 		addDirectoryToCompilationUnit(srcTestJavaPath, false, true);
-		openFiles.keySet().forEach(uri -> {
+		fileContentsTracker.getOpenURIs().forEach(uri -> {
 			Path path = Paths.get(uri);
-			String contents = openFiles.get(uri);
+			String contents = fileContentsTracker.getContents(uri);
 			SourceUnit sourceUnit = new SourceUnit(path.toString(),
 					new StringReaderSourceWithURI(contents, uri, compilationUnit.getConfiguration()),
 					compilationUnit.getConfiguration(), compilationUnit.getClassLoader(),
@@ -263,7 +279,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 				}
 				URI fileURI = filePath.toUri();
 				// skip files that are open in memory
-				if (!openFiles.containsKey(fileURI)) {
+				if (!fileContentsTracker.isOpen(fileURI)) {
 					File file = filePath.toFile();
 					if (file.isFile()) {
 						compilationUnit.addSource(file);
