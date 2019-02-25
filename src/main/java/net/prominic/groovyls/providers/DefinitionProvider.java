@@ -46,13 +46,13 @@ public class DefinitionProvider {
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 
 		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, ast);
-		if (definitionNode == null) {
+		if (definitionNode == null || definitionNode.getLineNumber() == -1 || definitionNode.getColumnNumber() == -1) {
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
 
 		URI definitionURI = ast.getURI(definitionNode);
 		if (definitionURI == null) {
-			return CompletableFuture.completedFuture(Collections.emptyList());
+			definitionURI = uri;
 		}
 
 		Location location = new Location(definitionURI.toString(),
