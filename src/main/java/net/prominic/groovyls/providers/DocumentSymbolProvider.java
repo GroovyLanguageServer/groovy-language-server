@@ -29,8 +29,10 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
@@ -43,11 +45,11 @@ public class DocumentSymbolProvider {
 		this.ast = ast;
 	}
 
-	public CompletableFuture<List<? extends SymbolInformation>> provideDocumentSymbols(
+	public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> provideDocumentSymbols(
 			TextDocumentIdentifier textDocument) {
 		URI uri = URI.create(textDocument.getUri());
 		List<ASTNode> nodes = ast.getNodes(uri);
-		List<SymbolInformation> symbols = nodes.stream().filter(node -> {
+		List<Either<SymbolInformation, DocumentSymbol>> symbols = nodes.stream().filter(node -> {
 			return node instanceof ClassNode || node instanceof MethodNode || node instanceof FieldNode
 					|| node instanceof PropertyNode;
 		}).map(node -> {
@@ -70,6 +72,8 @@ public class DocumentSymbolProvider {
 			}
 			// this should never happen
 			return null;
+		}).map(node -> {
+			return Either.<SymbolInformation, DocumentSymbol>forLeft(node);
 		}).collect(Collectors.toList());
 		return CompletableFuture.completedFuture(symbols);
 	}
