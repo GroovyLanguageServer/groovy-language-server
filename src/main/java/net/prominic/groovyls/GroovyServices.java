@@ -35,9 +35,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
@@ -142,7 +139,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	public void didOpen(DidOpenTextDocumentParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		openFiles.put(uri, params.getTextDocument().getText());
-		compile(ImmutableSet.of(uri));
+		compile(Collections.singleton(uri));
 		visitAST();
 	}
 
@@ -151,7 +148,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		URI uri = URI.create(params.getTextDocument().getUri());
 		createCompilationUnit();
 		openFiles.put(uri, params.getContentChanges().get(0).getText());
-		compile(ImmutableSet.of(uri));
+		compile(Collections.singleton(uri));
 		visitAST();
 	}
 
@@ -160,7 +157,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		URI uri = URI.create(params.getTextDocument().getUri());
 		openFiles.remove(uri);
 		createCompilationUnit();
-		compile(ImmutableSet.of(uri));
+		compile(Collections.singleton(uri));
 		visitAST();
 	}
 
@@ -377,7 +374,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 				if (!diagnosticsByFile.containsKey(key)) {
 					// send an empty list of diagnostics for files that had
 					// diagnostics previously or they won't be cleared
-					result.add(new PublishDiagnosticsParams(key.toString(), Lists.newArrayList()));
+					result.add(new PublishDiagnosticsParams(key.toString(), new ArrayList<>()));
 				}
 			}
 		}

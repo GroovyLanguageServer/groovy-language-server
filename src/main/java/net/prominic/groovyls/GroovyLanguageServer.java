@@ -19,11 +19,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls;
 
-import com.google.common.collect.ImmutableList;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+
 import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -58,7 +59,7 @@ public class GroovyLanguageServer implements LanguageServer, LanguageClientAware
         Path workspaceRoot = Paths.get(uri);
         groovyServices.setWorkspaceRoot(workspaceRoot);
 
-        CompletionOptions completionOptions = new CompletionOptions(false, ImmutableList.of("."));
+        CompletionOptions completionOptions = new CompletionOptions(false, Arrays.asList("."));
         ServerCapabilities serverCapabilities = new ServerCapabilities();
         serverCapabilities.setCompletionProvider(completionOptions);
         serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
