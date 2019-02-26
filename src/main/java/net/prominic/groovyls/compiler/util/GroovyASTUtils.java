@@ -130,7 +130,6 @@ public class GroovyASTUtils {
         }
 
         if (possibleMethods != null && !possibleMethods.isEmpty()
-        // && classes.containsKey(parentClass.getName())
                 && node.getArguments() instanceof ArgumentListExpression) {
             ArgumentListExpression actualArguments = (ArgumentListExpression) node.getArguments();
             MethodNode foundMethod = possibleMethods.stream().max(new Comparator<MethodNode>() {
