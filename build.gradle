@@ -3,6 +3,10 @@ plugins {
   id "java"
 }
 
+test {
+    useJUnitPlatform()
+}
+
 ext.mainClass = "net.prominic.groovyls.GroovyLanguageServer"
 
 tasks.build.dependsOn tasks.shadowJar
@@ -21,4 +25,6 @@ dependencies {
 	compile "org.eclipse.lsp4j:org.eclipse.lsp4j:0.6.0"
 	compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.6.0"
 	compile "org.codehaus.groovy:groovy-all:2.5.4"
+	testImplementation "org.junit.jupiter:junit-jupiter-api:5.1.0"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.1.0"
 }
