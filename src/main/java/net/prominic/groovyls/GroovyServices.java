@@ -119,7 +119,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		srcMainJavaPath = workspaceRoot.resolve("src/main/java");
 		srcTestGroovyPath = workspaceRoot.resolve("src/test/groovy");
 		srcTestJavaPath = workspaceRoot.resolve("src/test/java");
-		createCompilationUnit();
+		createOrUpdateCompilationUnit();
 	}
 
 	@Override
@@ -132,6 +132,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
 		fileContentsTracker.didOpen(params);
+		createOrUpdateCompilationUnit();
 
 		URI uri = URI.create(params.getTextDocument().getUri());
 		compile(Collections.singleton(uri));
@@ -141,9 +142,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public void didChange(DidChangeTextDocumentParams params) {
-		createCompilationUnit();
-
 		fileContentsTracker.didChange(params);
+		createOrUpdateCompilationUnit();
 
 		URI uri = URI.create(params.getTextDocument().getUri());
 		compile(Collections.singleton(uri));
@@ -153,7 +153,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public void didClose(DidCloseTextDocumentParams params) {
-		createCompilationUnit();
+		fileContentsTracker.didClose(params);
+		createOrUpdateCompilationUnit();
 
 		URI uri = URI.create(params.getTextDocument().getUri());
 		compile(Collections.singleton(uri));
@@ -168,7 +169,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
-		createCompilationUnit();
+		createOrUpdateCompilationUnit();
 		Set<URI> urisWithChanges = params.getChanges().stream().map(fileEvent -> URI.create(fileEvent.getUri()))
 				.collect(Collectors.toSet());
 		compile(urisWithChanges);
@@ -230,7 +231,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		astVisitor.visitCompilationUnit(compilationUnit);
 	}
 
-	private void createCompilationUnit() {
+	private void createOrUpdateCompilationUnit() {
 		File tempDirectory = tempDirectoryPath.toFile();
 		if (tempDirectory.exists()) {
 			try {
