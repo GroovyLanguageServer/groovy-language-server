@@ -204,9 +204,14 @@ public class GroovyASTUtils {
 
     private static int calculateArgumentsScore(Parameter[] parameters, ArgumentListExpression arguments) {
         int score = 0;
-        if (parameters.length == arguments.getExpressions().size()) {
+        int paramCount = parameters.length;
+        int argsCount = arguments.getExpressions().size();
+        if (paramCount == arguments.getExpressions().size()) {
             score += 100;
-            for (int i = 0; i < parameters.length; i++) {
+        }
+        if (paramCount >= argsCount) {
+            int minCount = Math.min(paramCount, argsCount);
+            for (int i = 0; i < minCount; i++) {
                 // If they aren't the same type, return false
                 ClassNode argType = arguments.getExpression(i).getType();
                 ClassNode paramType = parameters[i].getType();

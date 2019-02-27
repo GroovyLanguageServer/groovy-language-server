@@ -95,7 +95,10 @@ public class SignatureHelpProvider {
 			sigInfos.add(sigInfo);
 		}
 
-		return CompletableFuture.completedFuture(new SignatureHelp(sigInfos, 0, activeParamIndex));
+		MethodNode bestMethod = GroovyASTUtils.getMethodFromCallExpression(methodCall, ast);
+		int activeSignature = methods.indexOf(bestMethod);
+
+		return CompletableFuture.completedFuture(new SignatureHelp(sigInfos, activeSignature, activeParamIndex));
 	}
 
 	private int getActiveParameter(Position position, List<Expression> expressions) {
