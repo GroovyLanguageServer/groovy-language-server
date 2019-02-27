@@ -264,6 +264,9 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		pushASTNode(node);
 		try {
 			super.visitConstructor(node);
+			for (Parameter parameter : node.getParameters()) {
+				visitParameter(parameter);
+			}
 		} finally {
 			popASTNode();
 		}
