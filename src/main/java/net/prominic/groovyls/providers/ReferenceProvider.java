@@ -45,18 +45,12 @@ public class ReferenceProvider {
 			Position position) {
 		URI documentURI = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(documentURI, position.getLine(), position.getCharacter());
-
-		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, ast);
-		if (definitionNode == null) {
+		if (offsetNode == null) {
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
 
-		List<ASTNode> nodes = ast.getNodes();
-
-		List<Location> locations = nodes.stream().filter(node -> {
-			ASTNode otherDefinition = GroovyASTUtils.getDefinition(node, ast);
-			return definitionNode.equals(otherDefinition);
-		}).map(node -> {
+		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast);
+		List<Location> locations = references.stream().map(node -> {
 			URI uri = ast.getURI(node);
 			return new Location(uri.toString(), GroovyLanguageServerUtils.astNodeToRange(node));
 		}).collect(Collectors.toList());

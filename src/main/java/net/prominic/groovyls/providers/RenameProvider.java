@@ -74,16 +74,12 @@ public class RenameProvider {
 
 		URI documentURI = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(documentURI, position.getLine(), position.getCharacter());
-
-		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, ast);
-		if (definitionNode == null) {
+		if (offsetNode == null) {
 			return CompletableFuture.completedFuture(workspaceEdit);
 		}
 
-		ast.getNodes().stream().filter(node -> {
-			ASTNode otherDefinition = GroovyASTUtils.getDefinition(node, ast);
-			return definitionNode.equals(otherDefinition) && node.getLineNumber() != -1 && node.getColumnNumber() != -1;
-		}).forEach(node -> {
+		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast);
+		references.forEach(node -> {
 			URI uri = ast.getURI(node);
 			if (uri == null) {
 				uri = documentURI;

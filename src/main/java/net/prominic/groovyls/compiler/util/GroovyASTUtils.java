@@ -19,8 +19,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.util;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -92,6 +94,17 @@ public class GroovyASTUtils {
             return node;
         }
         return null;
+    }
+
+    public static List<ASTNode> getReferences(ASTNode node, ASTNodeVisitor ast) {
+        ASTNode definitionNode = getDefinition(node, ast);
+        if (definitionNode == null) {
+            return Collections.emptyList();
+        }
+        return ast.getNodes().stream().filter(otherNode -> {
+            ASTNode otherDefinition = getDefinition(otherNode, ast);
+            return definitionNode.equals(otherDefinition) && node.getLineNumber() != -1 && node.getColumnNumber() != -1;
+        }).collect(Collectors.toList());
     }
 
     public static ClassNode resolveOriginalClassNode(ClassNode node, ASTNodeVisitor ast) {
