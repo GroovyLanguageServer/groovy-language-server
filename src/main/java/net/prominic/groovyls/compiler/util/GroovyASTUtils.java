@@ -156,31 +156,34 @@ public class GroovyASTUtils {
         return result;
     }
 
-    public static MethodNode getMethodFromCallExpression(MethodCallExpression node, ASTNodeVisitor astVisitor) {
-        List<MethodNode> possibleMethods = null;
+    public static List<MethodNode> getMethodOverloadsFromCallExpression(MethodCallExpression node,
+            ASTNodeVisitor astVisitor) {
         if (node.getObjectExpression() instanceof ClassExpression) {
             ClassExpression expression = (ClassExpression) node.getObjectExpression();
             // This means it's an expression like this: SomeClass.someMethod
-            possibleMethods = expression.getType().getMethods(node.getMethod().getText());
+            return expression.getType().getMethods(node.getMethod().getText());
         } else if (node.getObjectExpression() instanceof ConstructorCallExpression) {
             ConstructorCallExpression expression = (ConstructorCallExpression) node.getObjectExpression();
             // Local function, no class used (or technically this used).
-            possibleMethods = expression.getType().getMethods(node.getMethod().getText());
+            return expression.getType().getMethods(node.getMethod().getText());
         } else if (node.getObjectExpression() instanceof VariableExpression) {
             // function called on instance of some class
             VariableExpression var = (VariableExpression) node.getObjectExpression();
             if (var.getName().equals("this")) {
                 ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
                 if (enclosingClass != null) {
-                    possibleMethods = enclosingClass.getMethods(node.getMethod().getText());
+                    return enclosingClass.getMethods(node.getMethod().getText());
                 }
             } else if (var.getOriginType() != null) {
-                possibleMethods = var.getOriginType().getMethods(node.getMethod().getText());
+                return var.getOriginType().getMethods(node.getMethod().getText());
             }
         }
+        return Collections.emptyList();
+    }
 
-        if (possibleMethods != null && !possibleMethods.isEmpty()
-                && node.getArguments() instanceof ArgumentListExpression) {
+    public static MethodNode getMethodFromCallExpression(MethodCallExpression node, ASTNodeVisitor astVisitor) {
+        List<MethodNode> possibleMethods = getMethodOverloadsFromCallExpression(node, astVisitor);
+        if (!possibleMethods.isEmpty() && node.getArguments() instanceof ArgumentListExpression) {
             ArgumentListExpression actualArguments = (ArgumentListExpression) node.getArguments();
             MethodNode foundMethod = possibleMethods.stream().max(new Comparator<MethodNode>() {
                 public int compare(MethodNode m1, MethodNode m2) {
