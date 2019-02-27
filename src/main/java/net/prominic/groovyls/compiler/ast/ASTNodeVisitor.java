@@ -38,7 +38,6 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -50,7 +49,6 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
@@ -73,7 +71,6 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -176,10 +173,30 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 				nodeToRange.put(node, range);
 			}
 			return result;
-		}).sorted((n1, n2) -> Positions.COMPARATOR.compare(nodeToRange.get(n1).getEnd(), nodeToRange.get(n2).getEnd()))
-				.sorted((n1, n2) -> Positions.COMPARATOR.reversed().compare(nodeToRange.get(n1).getStart(),
-						nodeToRange.get(n2).getStart()))
-				.collect(Collectors.toList());
+		}).sorted((n1, n2) -> {
+			int result = Positions.COMPARATOR.reversed().compare(nodeToRange.get(n1).getStart(),
+					nodeToRange.get(n2).getStart());
+			if (result != 0) {
+				return result;
+			}
+			result = Positions.COMPARATOR.compare(nodeToRange.get(n1).getEnd(), nodeToRange.get(n2).getEnd());
+			if (result != 0) {
+				return result;
+			}
+			//n1 and n2 have the same range
+			if (contains(n1, n2)) {
+				if (n1 instanceof ClassNode && n2 instanceof ConstructorNode) {
+					return -1;
+				}
+				return 1;
+			} else if (contains(n2, n1)) {
+				if (n2 instanceof ClassNode && n1 instanceof ConstructorNode) {
+					return 1;
+				}
+				return -1;
+			}
+			return 0;
+		}).collect(Collectors.toList());
 		if (foundNodes.size() == 0) {
 			return null;
 		}
@@ -192,6 +209,17 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 			return null;
 		}
 		return data.parent;
+	}
+
+	public boolean contains(ASTNode ancestor, ASTNode descendant) {
+		ASTNode current = getParent(descendant);
+		while (current != null) {
+			if (current.equals(ancestor)) {
+				return true;
+			}
+			current = getParent(current);
+		}
+		return false;
 	}
 
 	public URI getURI(ASTNode node) {
@@ -275,14 +303,15 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	// GroovyCodeVisitor
 
-	public void visitBlockStatement(BlockStatement node) {
+	//this has the same range as a class, which isn't ideal
+	/*public void visitBlockStatement(BlockStatement node) {
 		pushASTNode(node);
 		try {
 			super.visitBlockStatement(node);
 		} finally {
 			popASTNode();
 		}
-	}
+	}*/
 
 	public void visitForLoop(ForStatement node) {
 		pushASTNode(node);
@@ -662,14 +691,15 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	public void visitDeclarationExpression(DeclarationExpression node) {
+	//this calls visitBinaryExpression()
+	/*public void visitDeclarationExpression(DeclarationExpression node) {
 		pushASTNode(node);
 		try {
 			super.visitDeclarationExpression(node);
 		} finally {
 			popASTNode();
 		}
-	}
+	}*/
 
 	public void visitPropertyExpression(PropertyExpression node) {
 		pushASTNode(node);
@@ -716,14 +746,15 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	public void visitArgumentlistExpression(ArgumentListExpression node) {
+	//this calls visitTupleListExpression()
+	/*public void visitArgumentlistExpression(ArgumentListExpression node) {
 		pushASTNode(node);
 		try {
 			super.visitArgumentlistExpression(node);
 		} finally {
 			popASTNode();
 		}
-	}
+	}*/
 
 	public void visitClosureListExpression(ClosureListExpression node) {
 		pushASTNode(node);

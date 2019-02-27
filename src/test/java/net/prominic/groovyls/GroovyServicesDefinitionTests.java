@@ -26,7 +26,6 @@ class GroovyServicesDefinitionTests {
 
 	private GroovyServices services;
 	private Path workspaceRoot;
-	private PublishDiagnosticsParams savedDiagnostics;
 
 	@BeforeEach
 	void setup() {
@@ -52,7 +51,7 @@ class GroovyServicesDefinitionTests {
 
 			@Override
 			public void publishDiagnostics(PublishDiagnosticsParams diagnostics) {
-				savedDiagnostics = diagnostics;
+
 			}
 
 			@Override
@@ -65,7 +64,6 @@ class GroovyServicesDefinitionTests {
 	@AfterEach
 	void tearDown() {
 		services = null;
-		savedDiagnostics = null;
 	}
 
 	// --- local variables
@@ -110,6 +108,59 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
+		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
+				.get();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(2, location.getRange().getStart().getLine());
+		Assertions.assertEquals(8, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(2, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(16, location.getRange().getEnd().getCharacter());
+	}
+
+	@Test
+	void testLocalVariableDefinitionFromMethodCallObjectExpression() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  public Definitions() {\n");
+		contents.append("    String localVar = \"hi\"\n");
+		contents.append("    localVar.charAt(0)\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 6);
+		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
+				.get();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(2, location.getRange().getStart().getLine());
+		Assertions.assertEquals(11, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(2, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(19, location.getRange().getEnd().getCharacter());
+	}
+
+	@Test
+	void testLocalVariableDefinitionFromMethodCallArgument() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  public Definitions() {\n");
+		contents.append("    int localVar\n");
+		contents.append("    this.method(localVar)\n");
+		contents.append("  }\n");
+		contents.append("  public void method(int param) {}\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 18);
 		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
 				.get();
 		Assertions.assertEquals(1, locations.size());
