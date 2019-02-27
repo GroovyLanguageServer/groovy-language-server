@@ -26,9 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.MarkedString;
@@ -38,10 +36,9 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
+import net.prominic.groovyls.util.GroovyNodeToStringUtils;
 
 public class HoverProvider {
-	private static final String JAVA_OBJECT = "java.lang.Object";
-
 	private ASTNodeVisitor ast;
 
 	public HoverProvider(ASTNodeVisitor ast) {
@@ -73,94 +70,13 @@ public class HoverProvider {
 	private String getContent(ASTNode hoverNode) {
 		if (hoverNode instanceof ClassNode) {
 			ClassNode classNode = (ClassNode) hoverNode;
-			StringBuilder builder = new StringBuilder();
-			if (!classNode.isSyntheticPublic()) {
-				builder.append("public ");
-			}
-			if (classNode.isAbstract()) {
-				builder.append("abstract ");
-			}
-			if (classNode.isInterface()) {
-				builder.append("interface ");
-			} else if (classNode.isEnum()) {
-				builder.append("enum ");
-			} else {
-				builder.append("class ");
-			}
-			builder.append(classNode.getName());
-
-			ClassNode superClass = classNode.getSuperClass();
-			if (superClass != null && !superClass.getName().equals(JAVA_OBJECT)) {
-				builder.append("extends ");
-				builder.append(superClass.getNameWithoutPackage());
-			}
-			return builder.toString();
+			return GroovyNodeToStringUtils.classToString(classNode);
 		} else if (hoverNode instanceof MethodNode) {
 			MethodNode methodNode = (MethodNode) hoverNode;
-			StringBuilder builder = new StringBuilder();
-			if (methodNode.isPublic()) {
-				if (!methodNode.isSyntheticPublic()) {
-					builder.append("public ");
-				}
-			} else if (methodNode.isProtected()) {
-				builder.append("protected ");
-			} else if (methodNode.isPrivate()) {
-				builder.append("private ");
-			}
-
-			if (methodNode.isStatic()) {
-				builder.append("static ");
-			}
-
-			if (methodNode.isFinal()) {
-				builder.append("final ");
-			}
-			ClassNode returnType = methodNode.getReturnType();
-			builder.append(returnType.getNameWithoutPackage());
-			builder.append(" ");
-			builder.append(methodNode.getName());
-			builder.append("(");
-			Parameter[] params = methodNode.getParameters();
-			for (int i = 0; i < params.length; i++) {
-				if (i > 0) {
-					builder.append(", ");
-				}
-				Parameter paramNode = params[i];
-				ClassNode paramType = paramNode.getType();
-				builder.append(paramType.getNameWithoutPackage());
-				builder.append(" ");
-				builder.append(paramNode.getName());
-			}
-			builder.append(")");
-			return builder.toString();
+			return GroovyNodeToStringUtils.methodToString(methodNode);
 		} else if (hoverNode instanceof Variable) {
 			Variable varNode = (Variable) hoverNode;
-			StringBuilder builder = new StringBuilder();
-			if (varNode instanceof FieldNode) {
-				FieldNode fieldNode = (FieldNode) varNode;
-				if (fieldNode.isPublic()) {
-					builder.append("public ");
-				}
-				if (fieldNode.isProtected()) {
-					builder.append("protected ");
-				}
-				if (fieldNode.isPrivate()) {
-					builder.append("private ");
-				}
-
-				if (fieldNode.isFinal()) {
-					builder.append("final ");
-				}
-
-				if (fieldNode.isStatic()) {
-					builder.append("static ");
-				}
-			}
-			ClassNode varType = varNode.getType();
-			builder.append(varType.getNameWithoutPackage());
-			builder.append(" ");
-			builder.append(varNode.getName());
-			return builder.toString();
+			return GroovyNodeToStringUtils.variableToString(varNode);
 		} else {
 			System.err.println("*** hover not available for node: " + hoverNode);
 		}
