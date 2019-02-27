@@ -61,6 +61,7 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
+import org.eclipse.lsp4j.SignatureHelp;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
 import org.eclipse.lsp4j.WorkspaceEdit;
@@ -80,6 +81,7 @@ import net.prominic.groovyls.providers.DocumentSymbolProvider;
 import net.prominic.groovyls.providers.HoverProvider;
 import net.prominic.groovyls.providers.ReferenceProvider;
 import net.prominic.groovyls.providers.RenameProvider;
+import net.prominic.groovyls.providers.SignatureHelpProvider;
 import net.prominic.groovyls.providers.TypeDefinitionProvider;
 import net.prominic.groovyls.providers.WorkspaceSymbolProvider;
 import net.prominic.groovyls.util.FileContentsTracker;
@@ -198,6 +200,12 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	public CompletableFuture<List<? extends Location>> definition(TextDocumentPositionParams params) {
 		DefinitionProvider provider = new DefinitionProvider(astVisitor);
 		return provider.provideDefinition(params.getTextDocument(), params.getPosition());
+	}
+
+	@Override
+	public CompletableFuture<SignatureHelp> signatureHelp(TextDocumentPositionParams params) {
+		SignatureHelpProvider provider = new SignatureHelpProvider(astVisitor);
+		return provider.provideSignatureHelp(params.getTextDocument(), params.getPosition());
 	}
 
 	@Override

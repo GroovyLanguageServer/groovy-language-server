@@ -29,6 +29,7 @@ import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.SignatureHelpOptions;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -71,6 +72,9 @@ public class GroovyLanguageServer implements LanguageServer, LanguageClientAware
         serverCapabilities.setTypeDefinitionProvider(true);
         serverCapabilities.setHoverProvider(true);
         serverCapabilities.setRenameProvider(true);
+        SignatureHelpOptions signatureHelpOptions = new SignatureHelpOptions();
+        signatureHelpOptions.setTriggerCharacters(Arrays.asList("(", ","));
+        serverCapabilities.setSignatureHelpProvider(signatureHelpOptions);
 
         InitializeResult initializeResult = new InitializeResult(serverCapabilities);
         return CompletableFuture.completedFuture(initializeResult);
