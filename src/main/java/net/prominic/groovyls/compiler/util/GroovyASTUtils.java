@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -59,6 +60,17 @@ public class GroovyASTUtils {
         }
         if (node instanceof ClassNode || node instanceof MethodNode) {
             return node;
+        } else if (node instanceof ConstructorCallExpression) {
+            ConstructorCallExpression callExpression = (ConstructorCallExpression) node;
+            return callExpression.getType();
+        } else if (node instanceof DeclarationExpression) {
+            DeclarationExpression declExpression = (DeclarationExpression) node;
+            if (!declExpression.isMultipleAssignmentDeclaration()) {
+                return declExpression.getVariableExpression().getOriginType();
+            }
+        } else if (node instanceof ClassExpression) {
+            ClassExpression classExpression = (ClassExpression) node;
+            return classExpression.getType();
         } else if (node instanceof ConstantExpression && parentNode != null) {
             if (parentNode instanceof MethodCallExpression) {
                 MethodCallExpression methodCallExpression = (MethodCallExpression) parentNode;

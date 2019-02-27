@@ -297,4 +297,80 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
 		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
 	}
+
+	@Test
+	void testClassDefinitionFromConstructorCall() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  public Definitions() {\n");
+		contents.append("    new Definitions()\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(2, 10);
+		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
+				.get();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		/*Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());*/
+	}
+
+	@Test
+	void testClassDefinitionFromVariableDeclaration() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  public Definitions() {\n");
+		contents.append("    Definitions d\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(2, 6);
+		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
+				.get();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		/*Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());*/
+	}
+
+	@Test
+	void testClassDefinitionFromClassExpression() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  public static void staticMethod() {}\n");
+		contents.append("  public Definitions() {\n");
+		contents.append("    Definitions.staticMethod()\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 6);
+		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
+				.get();
+		/*Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());*/
+	}
 }
