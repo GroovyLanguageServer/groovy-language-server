@@ -19,9 +19,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.providers;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,6 +50,7 @@ import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
 import net.prominic.groovyls.util.FileContentsTracker;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.lsp.utils.Ranges;
 
 public class RenameProvider {
 	private ASTNodeVisitor ast;
@@ -142,33 +140,8 @@ public class RenameProvider {
 
 	private String getPartialNodeText(URI uri, ASTNode node) {
 		String contents = files.getContents(uri);
-		BufferedReader reader = new BufferedReader(new StringReader(contents));
 		Range range = GroovyLanguageServerUtils.astNodeToRange(node);
-		StringBuilder newContents = new StringBuilder();
-		Position start = range.getStart();
-		Position end = range.getEnd();
-		try {
-			for (int i = 0; i < start.getLine(); i++) {
-				reader.readLine();
-			}
-			for (int i = 0; i < start.getCharacter(); i++) {
-				reader.read();
-			}
-			if (end.getLine() > start.getLine()) {
-				newContents.append(reader.readLine());
-			} else {
-				for (int i = start.getCharacter(); i < end.getCharacter(); i++) {
-					newContents.append((char) reader.read());
-				}
-			}
-		} catch (IOException e) {
-			return null;
-		}
-		try {
-			reader.close();
-		} catch (IOException e) {
-		}
-		return newContents.toString();
+		return Ranges.getSubstring(contents, range, 1);
 	}
 
 	private TextEdit createTextEditToRenameClassNode(ClassNode classNode, String newName, String text, Range range) {
