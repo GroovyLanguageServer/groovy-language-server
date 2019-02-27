@@ -80,6 +80,7 @@ import net.prominic.groovyls.providers.DocumentSymbolProvider;
 import net.prominic.groovyls.providers.HoverProvider;
 import net.prominic.groovyls.providers.ReferenceProvider;
 import net.prominic.groovyls.providers.RenameProvider;
+import net.prominic.groovyls.providers.TypeDefinitionProvider;
 import net.prominic.groovyls.providers.WorkspaceSymbolProvider;
 import net.prominic.groovyls.util.FileContentsTracker;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
@@ -197,6 +198,12 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	public CompletableFuture<List<? extends Location>> definition(TextDocumentPositionParams params) {
 		DefinitionProvider provider = new DefinitionProvider(astVisitor);
 		return provider.provideDefinition(params.getTextDocument(), params.getPosition());
+	}
+
+	@Override
+	public CompletableFuture<List<? extends Location>> typeDefinition(TextDocumentPositionParams params) {
+		TypeDefinitionProvider provider = new TypeDefinitionProvider(astVisitor);
+		return provider.provideTypeDefinition(params.getTextDocument(), params.getPosition());
 	}
 
 	@Override

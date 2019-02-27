@@ -96,6 +96,21 @@ public class GroovyASTUtils {
         return null;
     }
 
+    public static ASTNode getTypeDefinition(ASTNode node, ASTNodeVisitor astVisitor) {
+        ASTNode definitionNode = getDefinition(node, astVisitor);
+        if (definitionNode == null) {
+            return null;
+        }
+        if (definitionNode instanceof MethodNode) {
+            MethodNode method = (MethodNode) definitionNode;
+            return resolveOriginalClassNode(method.getReturnType(), astVisitor);
+        } else if (definitionNode instanceof Variable) {
+            Variable variable = (Variable) definitionNode;
+            return resolveOriginalClassNode(variable.getOriginType(), astVisitor);
+        }
+        return null;
+    }
+
     public static List<ASTNode> getReferences(ASTNode node, ASTNodeVisitor ast) {
         ASTNode definitionNode = getDefinition(node, ast);
         if (definitionNode == null) {
