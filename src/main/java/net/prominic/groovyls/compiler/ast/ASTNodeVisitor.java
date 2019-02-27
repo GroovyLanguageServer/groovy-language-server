@@ -111,6 +111,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	private Stack<ASTNode> stack = new Stack<>();
 	private Set<ASTNode> nodes = new HashSet<>();
+	private Set<ClassNode> classNodes = new HashSet<>();
 	private Map<ASTNode, ASTNodeLookupData> lookup = new HashMap<>();
 
 	private void pushASTNode(ASTNode node) {
@@ -135,6 +136,10 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	private void popASTNode() {
 		stack.pop();
+	}
+
+	public List<ClassNode> getClassNodes() {
+		return new ArrayList<>(classNodes);
 	}
 
 	public List<ASTNode> getNodes() {
@@ -246,6 +251,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	// GroovyClassVisitor
 
 	public void visitClass(ClassNode node) {
+		classNodes.add(node);
 		pushASTNode(node);
 		try {
 			super.visitClass(node);

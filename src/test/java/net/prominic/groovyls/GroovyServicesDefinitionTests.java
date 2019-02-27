@@ -317,10 +317,10 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
-		/*Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getLine());
 		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
-		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());*/
+		Assertions.assertEquals(4, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
 	}
 
 	@Test
@@ -342,10 +342,10 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
-		/*Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getLine());
 		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
-		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());*/
+		Assertions.assertEquals(4, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
 	}
 
 	@Test
@@ -365,12 +365,12 @@ class GroovyServicesDefinitionTests {
 		Position position = new Position(3, 6);
 		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
 				.get();
-		/*Assertions.assertEquals(1, locations.size());
+		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
 		Assertions.assertEquals(0, location.getRange().getStart().getLine());
 		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
-		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());*/
+		Assertions.assertEquals(5, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
 	}
 }

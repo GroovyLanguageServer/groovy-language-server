@@ -62,15 +62,16 @@ public class GroovyASTUtils {
             return node;
         } else if (node instanceof ConstructorCallExpression) {
             ConstructorCallExpression callExpression = (ConstructorCallExpression) node;
-            return callExpression.getType();
+            return resolveOriginalClassNode(callExpression.getType(), astVisitor);
         } else if (node instanceof DeclarationExpression) {
             DeclarationExpression declExpression = (DeclarationExpression) node;
             if (!declExpression.isMultipleAssignmentDeclaration()) {
-                return declExpression.getVariableExpression().getOriginType();
+                ClassNode originType = declExpression.getVariableExpression().getOriginType();
+                return resolveOriginalClassNode(originType, astVisitor);
             }
         } else if (node instanceof ClassExpression) {
             ClassExpression classExpression = (ClassExpression) node;
-            return classExpression.getType();
+            return resolveOriginalClassNode(classExpression.getType(), astVisitor);
         } else if (node instanceof ConstantExpression && parentNode != null) {
             if (parentNode instanceof MethodCallExpression) {
                 MethodCallExpression methodCallExpression = (MethodCallExpression) parentNode;
@@ -89,6 +90,15 @@ public class GroovyASTUtils {
             return null;
         } else if (node instanceof Variable) {
             return node;
+        }
+        return null;
+    }
+
+    public static ClassNode resolveOriginalClassNode(ClassNode node, ASTNodeVisitor ast) {
+        for (ClassNode originalNode : ast.getClassNodes()) {
+            if (originalNode.equals(node)) {
+                return originalNode;
+            }
         }
         return null;
     }
