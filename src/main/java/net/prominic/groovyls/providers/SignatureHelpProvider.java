@@ -95,7 +95,7 @@ public class SignatureHelpProvider {
 			sigInfos.add(sigInfo);
 		}
 
-		MethodNode bestMethod = GroovyASTUtils.getMethodFromCallExpression(methodCall, ast);
+		MethodNode bestMethod = GroovyASTUtils.getMethodFromCallExpression(methodCall, ast, activeParamIndex);
 		int activeSignature = methods.indexOf(bestMethod);
 
 		return CompletableFuture.completedFuture(new SignatureHelp(sigInfos, activeSignature, activeParamIndex));

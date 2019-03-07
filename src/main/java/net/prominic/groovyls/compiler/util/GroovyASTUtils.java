@@ -182,13 +182,20 @@ public class GroovyASTUtils {
     }
 
     public static MethodNode getMethodFromCallExpression(MethodCallExpression node, ASTNodeVisitor astVisitor) {
+        return getMethodFromCallExpression(node, astVisitor, -1);
+    }
+
+    public static MethodNode getMethodFromCallExpression(MethodCallExpression node, ASTNodeVisitor astVisitor,
+            int argIndex) {
         List<MethodNode> possibleMethods = getMethodOverloadsFromCallExpression(node, astVisitor);
         if (!possibleMethods.isEmpty() && node.getArguments() instanceof ArgumentListExpression) {
             ArgumentListExpression actualArguments = (ArgumentListExpression) node.getArguments();
             MethodNode foundMethod = possibleMethods.stream().max(new Comparator<MethodNode>() {
                 public int compare(MethodNode m1, MethodNode m2) {
-                    int m1Value = calculateArgumentsScore(m1.getParameters(), actualArguments);
-                    int m2Value = calculateArgumentsScore(m2.getParameters(), actualArguments);
+                    Parameter[] p1 = m1.getParameters();
+                    Parameter[] p2 = m2.getParameters();
+                    int m1Value = calculateArgumentsScore(p1, actualArguments, argIndex);
+                    int m2Value = calculateArgumentsScore(p2, actualArguments, argIndex);
                     if (m1Value > m2Value) {
                         return 1;
                     } else if (m1Value < m2Value) {
@@ -202,29 +209,32 @@ public class GroovyASTUtils {
         return null;
     }
 
-    private static int calculateArgumentsScore(Parameter[] parameters, ArgumentListExpression arguments) {
+    private static int calculateArgumentsScore(Parameter[] parameters, ArgumentListExpression arguments, int argIndex) {
         int score = 0;
         int paramCount = parameters.length;
-        int argsCount = arguments.getExpressions().size();
-        if (paramCount == arguments.getExpressions().size()) {
-            score += 100;
+        int expressionsCount = arguments.getExpressions().size();
+        int argsCount = expressionsCount;
+        if (argIndex >= argsCount) {
+            argsCount = argIndex + 1;
         }
-        if (paramCount >= argsCount) {
-            int minCount = Math.min(paramCount, argsCount);
-            for (int i = 0; i < minCount; i++) {
-                // If they aren't the same type, return false
-                ClassNode argType = arguments.getExpression(i).getType();
-                ClassNode paramType = parameters[i].getType();
+        int minCount = Math.min(paramCount, argsCount);
+        for (int i = 0; i < minCount; i++) {
+            ClassNode argType = (i < expressionsCount) ? arguments.getExpression(i).getType() : null;
+            ClassNode paramType = (i < paramCount) ? parameters[i].getType() : null;
+            if (argType != null && paramType != null) {
                 if (argType.equals(paramType)) {
                     // equal types are preferred
-                    score += 10;
+                    score += 1000;
                 } else if (argType.isDerivedFrom(paramType)) {
                     // subtypes are nice, but less important
-                    score++;
+                    score += 100;
                 } else {
-                    // if a type doesn't match at all, stop checking the rest
-                    break;
+                    // if a type doesn't match at all, it's not worth much
+                    score++;
                 }
+            } else if (paramType != null) {
+                //extra parameters are like a type not matching
+                score++;
             }
         }
         return score;
