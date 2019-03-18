@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -55,6 +56,26 @@ public class GroovyLanguageServerUtils {
 	public static Range astNodeToRange(ASTNode node) {
 		return new Range(createGroovyPosition(node.getLineNumber(), node.getColumnNumber()),
 				createGroovyPosition(node.getLastLineNumber(), node.getLastColumnNumber()));
+	}
+
+	public static CompletionItemKind astNodeToCompletionItemKind(ASTNode node) {
+		if (node instanceof ClassNode) {
+			ClassNode classNode = (ClassNode) node;
+			if (classNode.isInterface()) {
+				return CompletionItemKind.Interface;
+			} else if (classNode.isEnum()) {
+				return CompletionItemKind.Enum;
+			}
+			return CompletionItemKind.Class;
+		} else if (node instanceof MethodNode) {
+			return CompletionItemKind.Method;
+		} else if (node instanceof Variable) {
+			if (node instanceof FieldNode || node instanceof PropertyNode) {
+				return CompletionItemKind.Field;
+			}
+			return CompletionItemKind.Variable;
+		}
+		return CompletionItemKind.Property;
 	}
 
 	public static SymbolKind astNodeToSymbolKind(ASTNode node) {

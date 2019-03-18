@@ -76,6 +76,7 @@ import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.control.ErrorCollectorWithoutThrow;
 import net.prominic.groovyls.compiler.control.GroovyCompilationUnit;
 import net.prominic.groovyls.compiler.control.io.StringReaderSourceWithURI;
+import net.prominic.groovyls.providers.CompletionProvider;
 import net.prominic.groovyls.providers.DefinitionProvider;
 import net.prominic.groovyls.providers.DocumentSymbolProvider;
 import net.prominic.groovyls.providers.HoverProvider;
@@ -193,7 +194,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
-		return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
+		CompletionProvider provider = new CompletionProvider(astVisitor);
+		return provider.provideCompletion(params.getTextDocument(), params.getPosition());
 	}
 
 	@Override

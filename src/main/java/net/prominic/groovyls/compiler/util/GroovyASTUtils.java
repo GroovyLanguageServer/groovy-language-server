@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -154,6 +155,48 @@ public class GroovyASTUtils {
             }
         }
         return result;
+    }
+
+    public static List<PropertyNode> getPropertiesForLeftSideOfPropertyExpression(Expression node,
+            ASTNodeVisitor astVisitor) {
+        if (node instanceof ClassExpression) {
+            ClassExpression expression = (ClassExpression) node;
+            // This means it's an expression like this: SomeClass.someProp
+            return expression.getType().getProperties();
+        } else if (node instanceof VariableExpression) {
+            // function called on instance of some class
+            VariableExpression var = (VariableExpression) node;
+            if (var.getName().equals("this")) {
+                ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
+                if (enclosingClass != null) {
+                    return enclosingClass.getProperties();
+                }
+            } else if (var.getOriginType() != null) {
+                return var.getOriginType().getProperties();
+            }
+        }
+        return null;
+    }
+
+    public static List<MethodNode> getMethodsForLeftSideOfPropertyExpression(Expression node,
+            ASTNodeVisitor astVisitor) {
+        if (node instanceof ClassExpression) {
+            ClassExpression expression = (ClassExpression) node;
+            // This means it's an expression like this: SomeClass.someProp
+            return expression.getType().getMethods();
+        } else if (node instanceof VariableExpression) {
+            // function called on instance of some class
+            VariableExpression var = (VariableExpression) node;
+            if (var.getName().equals("this")) {
+                ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
+                if (enclosingClass != null) {
+                    return enclosingClass.getMethods();
+                }
+            } else if (var.getOriginType() != null) {
+                return var.getOriginType().getMethods();
+            }
+        }
+        return null;
     }
 
     public static List<MethodNode> getMethodOverloadsFromCallExpression(MethodCallExpression node,
