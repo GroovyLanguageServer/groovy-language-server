@@ -195,7 +195,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	@Override
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
 		CompletionProvider provider = new CompletionProvider(astVisitor);
-		return provider.provideCompletion(params.getTextDocument(), params.getPosition());
+		return provider.provideCompletion(params.getTextDocument(), params.getPosition(), params.getContext());
 	}
 
 	@Override

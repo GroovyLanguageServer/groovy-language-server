@@ -33,6 +33,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Position;
@@ -51,7 +52,7 @@ public class CompletionProvider {
 	}
 
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> provideCompletion(
-			TextDocumentIdentifier textDocument, Position position) {
+			TextDocumentIdentifier textDocument, Position position, CompletionContext context) {
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 		if (offsetNode == null) {
