@@ -175,7 +175,7 @@ public class GroovyASTUtils {
                 return var.getOriginType().getProperties();
             }
         }
-        return null;
+        return Collections.emptyList();
     }
 
     public static List<MethodNode> getMethodsForLeftSideOfPropertyExpression(Expression node,
@@ -196,7 +196,7 @@ public class GroovyASTUtils {
                 return var.getOriginType().getMethods();
             }
         }
-        return null;
+        return Collections.emptyList();
     }
 
     public static List<MethodNode> getMethodOverloadsFromCallExpression(MethodCallExpression node,
