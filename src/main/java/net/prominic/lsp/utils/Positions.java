@@ -19,6 +19,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.lsp.utils;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.Comparator;
 
 import org.eclipse.lsp4j.Position;
@@ -30,4 +33,36 @@ public class Positions {
 		}
 		return p1.getCharacter() - p2.getCharacter();
 	};
+
+	public static int getOffset(String string, Position position) {
+		int line = position.getLine();
+		int character = position.getCharacter();
+		int currentIndex = 0;
+		if (line > 0) {
+			BufferedReader reader = new BufferedReader(new StringReader(string));
+			try {
+				int readLines = 0;
+				while (true) {
+					char currentChar = (char) reader.read();
+					if (currentChar == -1) {
+						return -1;
+					}
+					currentIndex++;
+					if (currentChar == '\n') {
+						readLines++;
+						if (readLines == line) {
+							break;
+						}
+					}
+				}
+			} catch (IOException e) {
+				return -1;
+			}
+			try {
+				reader.close();
+			} catch (IOException e) {
+			}
+		}
+		return currentIndex + character;
+	}
 }

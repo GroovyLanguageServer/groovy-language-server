@@ -31,6 +31,10 @@ import java.util.Set;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
+
+import net.prominic.lsp.utils.Positions;
 
 public class FileContentsTracker {
 
@@ -51,7 +55,19 @@ public class FileContentsTracker {
 
 	public void didChange(DidChangeTextDocumentParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
-		openFiles.put(uri, params.getContentChanges().get(0).getText());
+		String oldText = openFiles.get(uri);
+		TextDocumentContentChangeEvent change = params.getContentChanges().get(0);
+		Range range = change.getRange();
+		if (range == null) {
+			openFiles.put(uri, change.getText());
+		} else {
+			int offset = Positions.getOffset(oldText, change.getRange().getStart());
+			StringBuilder builder = new StringBuilder();
+			builder.append(oldText.substring(0, offset));
+			builder.append(change.getText());
+			builder.append(oldText.substring(offset + change.getRangeLength()));
+			openFiles.put(uri, builder.toString());
+		}
 	}
 
 	public void didClose(DidCloseTextDocumentParams params) {
@@ -82,5 +98,9 @@ public class FileContentsTracker {
 			}
 		}
 		return openFiles.get(uri);
+	}
+
+	public void setContents(URI uri, String contents) {
+		openFiles.put(uri, contents);
 	}
 }
