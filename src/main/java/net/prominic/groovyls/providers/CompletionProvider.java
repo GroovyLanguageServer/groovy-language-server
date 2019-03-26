@@ -37,6 +37,7 @@ import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
@@ -69,12 +70,24 @@ public class CompletionProvider {
 		List<CompletionItem> items = new ArrayList<>();
 		if (propExpr != null) {
 			Expression objectExpr = propExpr.getObjectExpression();
-			String propertyPrefix = propExpr.getPropertyAsString();
+			String propertyName = propExpr.getPropertyAsString();
+			Range propertyRange = GroovyLanguageServerUtils.astNodeToRange(propExpr.getProperty());
+			if (position.getLine() < propertyRange.getEnd().getLine()
+					|| position.getCharacter() < propertyRange.getEnd().getCharacter()) {
+				int length = position.getCharacter() - propertyRange.getStart().getCharacter();
+				if (length > 0) {
+					propertyName = propertyName.substring(0, length);
+				} else {
+					propertyName = "";
+				}
+			}
+			//need this to reference the value in the filter functions below
+			final String propertyNamePrefix = propertyName;
 
 			List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(objectExpr,
 					ast);
 			List<CompletionItem> propItems = properties.stream().filter(property -> {
-				return property.getName().startsWith(propertyPrefix);
+				return property.getName().startsWith(propertyNamePrefix);
 			}).map(property -> {
 				CompletionItem item = new CompletionItem();
 				item.setLabel(property.getName());
@@ -88,7 +101,7 @@ public class CompletionProvider {
 			List<CompletionItem> methodItems = methods.stream().filter(method -> {
 				String methodName = method.getName();
 				//overloads can cause duplicates
-				if (methodName.startsWith(propertyPrefix) && !foundMethods.contains(methodName)) {
+				if (methodName.startsWith(propertyNamePrefix) && !foundMethods.contains(methodName)) {
 					foundMethods.add(methodName);
 					return true;
 				}

@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
@@ -57,13 +58,17 @@ import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SignatureHelp;
 import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.WorkspaceSymbolParams;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -194,8 +199,49 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
-		CompletionProvider provider = new CompletionProvider(astVisitor);
-		return provider.provideCompletion(params.getTextDocument(), params.getPosition(), params.getContext());
+
+		String originalSource = null;
+
+		TextDocumentIdentifier textDocument = params.getTextDocument();
+		Position position = params.getPosition();
+		URI uri = URI.create(textDocument.getUri());
+		ASTNode offsetNode = astVisitor.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
+		if (offsetNode == null) {
+			originalSource = fileContentsTracker.getContents(uri);
+			VersionedTextDocumentIdentifier versionedTextDocument = new VersionedTextDocumentIdentifier(
+					textDocument.getUri(), 1);
+			TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent(
+					new Range(position, position), 0, "a");
+			DidChangeTextDocumentParams didChangeParams = new DidChangeTextDocumentParams(versionedTextDocument,
+					Collections.singletonList(changeEvent));
+			//if the offset node is null, there is probably a syntax error.
+			//a completion request is usually triggered by the . character, and
+			//if there is no property name after the dot, it will cause a syntax
+			//error.
+			//this hack adds a placeholder property name in the hopes that it
+			//will correctly create a PropertyExpression to use for completion.
+			//we'll restore the original text after we're done handling the
+			//completion request.
+			didChange(didChangeParams);
+		}
+
+		CompletableFuture<Either<List<CompletionItem>, CompletionList>> result = null;
+		try {
+			CompletionProvider provider = new CompletionProvider(astVisitor);
+			result = provider.provideCompletion(params.getTextDocument(), params.getPosition(), params.getContext());
+		} finally {
+			if (originalSource != null) {
+				VersionedTextDocumentIdentifier versionedTextDocument = new VersionedTextDocumentIdentifier(
+						textDocument.getUri(), 1);
+				TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent(null, 0,
+						originalSource);
+				DidChangeTextDocumentParams didChangeParams = new DidChangeTextDocumentParams(versionedTextDocument,
+						Collections.singletonList(changeEvent));
+				didChange(didChangeParams);
+			}
+		}
+
+		return result;
 	}
 
 	@Override
