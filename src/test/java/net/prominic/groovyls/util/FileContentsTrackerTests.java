@@ -82,7 +82,6 @@ class FileContentsTrackerTests {
 		changeEvent.setRangeLength(6);
 		changeParams.setContentChanges(Collections.singletonList(changeEvent));
 		tracker.didChange(changeParams);
-		System.err.println(tracker.getContents(URI.create("file.txt")));
 		Assertions.assertEquals("hello, friend", tracker.getContents(URI.create("file.txt")));
 	}
 
@@ -99,7 +98,6 @@ class FileContentsTrackerTests {
 		changeEvent.setRangeLength(4);
 		changeParams.setContentChanges(Collections.singletonList(changeEvent));
 		tracker.didChange(changeParams);
-		System.err.println(tracker.getContents(URI.create("file.txt")));
 		Assertions.assertEquals("hello\nwaffles", tracker.getContents(URI.create("file.txt")));
 	}
 }
