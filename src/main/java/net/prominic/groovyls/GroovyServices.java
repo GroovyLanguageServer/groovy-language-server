@@ -252,8 +252,45 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<SignatureHelp> signatureHelp(TextDocumentPositionParams params) {
-		SignatureHelpProvider provider = new SignatureHelpProvider(astVisitor);
-		return provider.provideSignatureHelp(params.getTextDocument(), params.getPosition());
+		String originalSource = null;
+
+		TextDocumentIdentifier textDocument = params.getTextDocument();
+		Position position = params.getPosition();
+		URI uri = URI.create(textDocument.getUri());
+		ASTNode offsetNode = astVisitor.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
+		if (offsetNode == null) {
+			originalSource = fileContentsTracker.getContents(uri);
+			VersionedTextDocumentIdentifier versionedTextDocument = new VersionedTextDocumentIdentifier(
+					textDocument.getUri(), 1);
+			TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent(
+					new Range(position, position), 0, ")");
+			DidChangeTextDocumentParams didChangeParams = new DidChangeTextDocumentParams(versionedTextDocument,
+					Collections.singletonList(changeEvent));
+			//if the offset node is null, there is probably a syntax error.
+			//a signature help request is usually triggered by the ( character,
+			//and if there is no matching ), it will cause a syntax error.
+			//this hack adds a placeholder ) character in the hopes that it
+			//will correctly create a ArgumentListExpression to use for
+			//signature help.
+			//we'll restore the original text after we're done handling the
+			//signature help request.
+			didChange(didChangeParams);
+		}
+
+		try {
+			SignatureHelpProvider provider = new SignatureHelpProvider(astVisitor);
+			return provider.provideSignatureHelp(params.getTextDocument(), params.getPosition());
+		} finally {
+			if (originalSource != null) {
+				VersionedTextDocumentIdentifier versionedTextDocument = new VersionedTextDocumentIdentifier(
+						textDocument.getUri(), 1);
+				TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent(null, 0,
+						originalSource);
+				DidChangeTextDocumentParams didChangeParams = new DidChangeTextDocumentParams(versionedTextDocument,
+						Collections.singletonList(changeEvent));
+				didChange(didChangeParams);
+			}
+		}
 	}
 
 	@Override
