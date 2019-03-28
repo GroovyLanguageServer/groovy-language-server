@@ -123,7 +123,8 @@ public class CompletionProvider {
 	}
 
 	private String getMemberName(String memberName, Range range, Position position) {
-		if (position.getLine() < range.getEnd().getLine() || position.getCharacter() < range.getEnd().getCharacter()) {
+		if (position.getLine() == range.getStart().getLine()
+				&& position.getCharacter() > range.getStart().getCharacter()) {
 			int length = position.getCharacter() - range.getStart().getCharacter();
 			if (length > 0 && length < memberName.length()) {
 				return memberName.substring(0, length);
