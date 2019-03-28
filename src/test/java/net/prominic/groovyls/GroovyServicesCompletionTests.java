@@ -194,6 +194,32 @@ class GroovyServicesCompletionTests {
 	}
 
 	@Test
+	void testMemberAccessOnLocalArrayAfterDot() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public Completion() {\n");
+		contents.append("    String[] localVar\n");
+		contents.append("    localVar[0].\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 16);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertTrue(items.size() > 0);
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
 	void testMemberAccessOnLocalVariableWithPartialPropertyExpression() throws Exception {
 		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
 		String uri = filePath.toUri().toString();

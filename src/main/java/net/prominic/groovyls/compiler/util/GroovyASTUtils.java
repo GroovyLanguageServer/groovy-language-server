@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -165,44 +166,46 @@ public class GroovyASTUtils {
 
     public static List<PropertyNode> getPropertiesForLeftSideOfPropertyExpression(Expression node,
             ASTNodeVisitor astVisitor) {
-        if (node instanceof ClassExpression) {
-            ClassExpression expression = (ClassExpression) node;
-            // This means it's an expression like this: SomeClass.someProp
-            return expression.getType().getProperties();
-        } else if (node instanceof VariableExpression) {
-            // function called on instance of some class
-            VariableExpression var = (VariableExpression) node;
-            if (var.getName().equals("this")) {
-                ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
-                if (enclosingClass != null) {
-                    return enclosingClass.getProperties();
-                }
-            } else if (var.getOriginType() != null) {
-                return var.getOriginType().getProperties();
-            }
+        ClassNode classNode = getTypeOfExpression(node, astVisitor);
+        if (classNode != null) {
+            return classNode.getProperties();
         }
         return Collections.emptyList();
     }
 
     public static List<MethodNode> getMethodsForLeftSideOfPropertyExpression(Expression node,
             ASTNodeVisitor astVisitor) {
-        if (node instanceof ClassExpression) {
+        ClassNode classNode = getTypeOfExpression(node, astVisitor);
+        if (classNode != null) {
+            return classNode.getMethods();
+        }
+        return Collections.emptyList();
+    }
+
+    public static ClassNode getTypeOfExpression(Expression node, ASTNodeVisitor astVisitor) {
+        if (node instanceof BinaryExpression) {
+            BinaryExpression binaryExpr = (BinaryExpression) node;
+            Expression leftExpr = binaryExpr.getLeftExpression();
+            if (binaryExpr.getOperation().getText().equals("[") && leftExpr.getType().isArray()) {
+                return leftExpr.getType().getComponentType();
+            }
+        } else if (node instanceof ClassExpression) {
             ClassExpression expression = (ClassExpression) node;
             // This means it's an expression like this: SomeClass.someProp
-            return expression.getType().getMethods();
+            return expression.getType();
         } else if (node instanceof VariableExpression) {
             // function called on instance of some class
             VariableExpression var = (VariableExpression) node;
             if (var.getName().equals("this")) {
                 ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
                 if (enclosingClass != null) {
-                    return enclosingClass.getMethods();
+                    return enclosingClass;
                 }
             } else if (var.getOriginType() != null) {
-                return var.getOriginType().getMethods();
+                return var.getOriginType();
             }
         }
-        return Collections.emptyList();
+        return null;
     }
 
     public static List<MethodNode> getMethodOverloadsFromCallExpression(MethodCall node, ASTNodeVisitor astVisitor) {
