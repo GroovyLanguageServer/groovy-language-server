@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
@@ -67,6 +68,10 @@ public class CompletionProvider {
 			populateItemsFromPropertyExpression((PropertyExpression) offsetNode, position, items);
 		} else if (parentNode instanceof PropertyExpression) {
 			populateItemsFromPropertyExpression((PropertyExpression) parentNode, position, items);
+		} else if (offsetNode instanceof MethodCallExpression) {
+			populateItemsFromMethodCallExpression((MethodCallExpression) offsetNode, position, items);
+		} else if (parentNode instanceof MethodCallExpression) {
+			populateItemsFromMethodCallExpression((MethodCallExpression) parentNode, position, items);
 		}
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
@@ -77,6 +82,13 @@ public class CompletionProvider {
 		Range propertyRange = GroovyLanguageServerUtils.astNodeToRange(propExpr.getProperty());
 		String memberName = getMemberName(propExpr.getPropertyAsString(), propertyRange, position);
 		populateItemsFromExpression(propExpr.getObjectExpression(), memberName, items);
+	}
+
+	private void populateItemsFromMethodCallExpression(MethodCallExpression methodCallExpr, Position position,
+			List<CompletionItem> items) {
+		Range methodRange = GroovyLanguageServerUtils.astNodeToRange(methodCallExpr.getMethod());
+		String memberName = getMemberName(methodCallExpr.getMethodAsString(), methodRange, position);
+		populateItemsFromExpression(methodCallExpr.getObjectExpression(), memberName, items);
 	}
 
 	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
