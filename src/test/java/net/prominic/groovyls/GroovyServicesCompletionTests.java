@@ -112,7 +112,7 @@ class GroovyServicesCompletionTests {
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
-		Assertions.assertTrue(filteredItems.size() > 0);
+		Assertions.assertEquals(1, filteredItems.size());
 	}
 
 	@Test
@@ -138,7 +138,7 @@ class GroovyServicesCompletionTests {
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
-		Assertions.assertTrue(filteredItems.size() > 0);
+		Assertions.assertEquals(1, filteredItems.size());
 	}
 
 	@Test
@@ -164,7 +164,7 @@ class GroovyServicesCompletionTests {
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("memberVar") && item.getKind().equals(CompletionItemKind.Field);
 		}).collect(Collectors.toList());
-		Assertions.assertTrue(filteredItems.size() > 0);
+		Assertions.assertEquals(1, filteredItems.size());
 	}
 
 	@Test
@@ -190,7 +190,7 @@ class GroovyServicesCompletionTests {
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("staticMethod") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
-		Assertions.assertTrue(filteredItems.size() > 0);
+		Assertions.assertEquals(1, filteredItems.size());
 	}
 
 	@Test
@@ -212,11 +212,11 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertTrue(items.size() > 0);
+		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
-		Assertions.assertTrue(filteredItems.size() > 0);
+		Assertions.assertEquals(1, filteredItems.size());
 	}
 
 	@Test
@@ -284,7 +284,7 @@ class GroovyServicesCompletionTests {
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
-		Assertions.assertTrue(filteredItems.size() > 0);
+		Assertions.assertEquals(1, filteredItems.size());
 	}
 
 	@Test
@@ -311,7 +311,7 @@ class GroovyServicesCompletionTests {
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
-		Assertions.assertTrue(filteredItems.size() > 0);
+		Assertions.assertEquals(1, filteredItems.size());
 	}
 
 	@Test
@@ -323,6 +323,32 @@ class GroovyServicesCompletionTests {
 		contents.append("  String memberVar\n");
 		contents.append("  public Completion() {\n");
 		contents.append("    mem\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 7);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("memberVar") && item.getKind().equals(CompletionItemKind.Field);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionOnCompleteVariableExpression() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  String memberVar\n");
+		contents.append("  public Completion() {\n");
+		contents.append("    memberVar\n");
 		contents.append("  }\n");
 		contents.append("}");
 		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
