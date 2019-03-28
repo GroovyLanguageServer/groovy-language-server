@@ -45,7 +45,7 @@ public class DefinitionProvider {
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 
-		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, ast);
+		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, true, ast);
 		if (definitionNode == null || definitionNode.getLineNumber() == -1 || definitionNode.getColumnNumber() == -1) {
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}

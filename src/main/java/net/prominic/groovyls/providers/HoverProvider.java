@@ -53,7 +53,7 @@ public class HoverProvider {
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 
-		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, ast);
+		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, false, ast);
 		if (definitionNode == null) {
 			return CompletableFuture.completedFuture(hover);
 		}

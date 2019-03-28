@@ -55,26 +55,28 @@ public class GroovyASTUtils {
         return null;
     }
 
-    public static ASTNode getDefinition(ASTNode node, ASTNodeVisitor astVisitor) {
+    public static ASTNode getDefinition(ASTNode node, boolean strict, ASTNodeVisitor astVisitor) {
         ASTNode parentNode = astVisitor.getParent(node);
         if (node instanceof ExpressionStatement) {
             ExpressionStatement statement = (ExpressionStatement) node;
             node = statement.getExpression();
         }
-        if (node instanceof ClassNode || node instanceof MethodNode) {
-            return node;
+        if (node instanceof ClassNode) {
+            return tryToResolveOriginalClassNode((ClassNode) node, strict, astVisitor);
         } else if (node instanceof ConstructorCallExpression) {
             ConstructorCallExpression callExpression = (ConstructorCallExpression) node;
-            return resolveOriginalClassNode(callExpression.getType(), astVisitor);
+            return tryToResolveOriginalClassNode(callExpression.getType(), strict, astVisitor);
         } else if (node instanceof DeclarationExpression) {
             DeclarationExpression declExpression = (DeclarationExpression) node;
             if (!declExpression.isMultipleAssignmentDeclaration()) {
                 ClassNode originType = declExpression.getVariableExpression().getOriginType();
-                return resolveOriginalClassNode(originType, astVisitor);
+                return tryToResolveOriginalClassNode(originType, strict, astVisitor);
             }
         } else if (node instanceof ClassExpression) {
             ClassExpression classExpression = (ClassExpression) node;
-            return resolveOriginalClassNode(classExpression.getType(), astVisitor);
+            return tryToResolveOriginalClassNode(classExpression.getType(), strict, astVisitor);
+        } else if (node instanceof MethodNode) {
+            return node;
         } else if (node instanceof ConstantExpression && parentNode != null) {
             if (parentNode instanceof MethodCallExpression) {
                 MethodCallExpression methodCallExpression = (MethodCallExpression) parentNode;
@@ -98,38 +100,41 @@ public class GroovyASTUtils {
     }
 
     public static ASTNode getTypeDefinition(ASTNode node, ASTNodeVisitor astVisitor) {
-        ASTNode definitionNode = getDefinition(node, astVisitor);
+        ASTNode definitionNode = getDefinition(node, false, astVisitor);
         if (definitionNode == null) {
             return null;
         }
         if (definitionNode instanceof MethodNode) {
             MethodNode method = (MethodNode) definitionNode;
-            return resolveOriginalClassNode(method.getReturnType(), astVisitor);
+            return tryToResolveOriginalClassNode(method.getReturnType(), true, astVisitor);
         } else if (definitionNode instanceof Variable) {
             Variable variable = (Variable) definitionNode;
-            return resolveOriginalClassNode(variable.getOriginType(), astVisitor);
+            return tryToResolveOriginalClassNode(variable.getOriginType(), true, astVisitor);
         }
         return null;
     }
 
     public static List<ASTNode> getReferences(ASTNode node, ASTNodeVisitor ast) {
-        ASTNode definitionNode = getDefinition(node, ast);
+        ASTNode definitionNode = getDefinition(node, true, ast);
         if (definitionNode == null) {
             return Collections.emptyList();
         }
         return ast.getNodes().stream().filter(otherNode -> {
-            ASTNode otherDefinition = getDefinition(otherNode, ast);
+            ASTNode otherDefinition = getDefinition(otherNode, false, ast);
             return definitionNode.equals(otherDefinition) && node.getLineNumber() != -1 && node.getColumnNumber() != -1;
         }).collect(Collectors.toList());
     }
 
-    public static ClassNode resolveOriginalClassNode(ClassNode node, ASTNodeVisitor ast) {
+    private static ClassNode tryToResolveOriginalClassNode(ClassNode node, boolean strict, ASTNodeVisitor ast) {
         for (ClassNode originalNode : ast.getClassNodes()) {
             if (originalNode.equals(node)) {
                 return originalNode;
             }
         }
-        return null;
+        if (strict) {
+            return null;
+        }
+        return node;
     }
 
     public static PropertyNode getPropertyFromExpression(PropertyExpression node, ASTNodeVisitor astVisitor) {
