@@ -61,60 +61,62 @@ public class CompletionProvider {
 		}
 		ASTNode parentNode = ast.getParent(offsetNode);
 
-		PropertyExpression propExpr = null;
-
-		if (parentNode instanceof PropertyExpression) {
-			propExpr = (PropertyExpression) parentNode;
-		}
-
 		List<CompletionItem> items = new ArrayList<>();
-		if (propExpr != null) {
-			Expression objectExpr = propExpr.getObjectExpression();
-			String propertyName = propExpr.getPropertyAsString();
-			Range propertyRange = GroovyLanguageServerUtils.astNodeToRange(propExpr.getProperty());
-			if (position.getLine() < propertyRange.getEnd().getLine()
-					|| position.getCharacter() < propertyRange.getEnd().getCharacter()) {
-				int length = position.getCharacter() - propertyRange.getStart().getCharacter();
-				if (length > 0) {
-					propertyName = propertyName.substring(0, length);
-				} else {
-					propertyName = "";
-				}
-			}
-			//need this to reference the value in the filter functions below
-			final String propertyNamePrefix = propertyName;
 
-			List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(objectExpr,
-					ast);
-			List<CompletionItem> propItems = properties.stream().filter(property -> {
-				return property.getName().startsWith(propertyNamePrefix);
-			}).map(property -> {
-				CompletionItem item = new CompletionItem();
-				item.setLabel(property.getName());
-				item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(property));
-				return item;
-			}).collect(Collectors.toList());
-			items.addAll(propItems);
-
-			List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(objectExpr, ast);
-			Set<String> foundMethods = new HashSet<>();
-			List<CompletionItem> methodItems = methods.stream().filter(method -> {
-				String methodName = method.getName();
-				//overloads can cause duplicates
-				if (methodName.startsWith(propertyNamePrefix) && !foundMethods.contains(methodName)) {
-					foundMethods.add(methodName);
-					return true;
-				}
-				return false;
-			}).map(method -> {
-				CompletionItem item = new CompletionItem();
-				item.setLabel(method.getName());
-				item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(method));
-				return item;
-			}).collect(Collectors.toList());
-			items.addAll(methodItems);
+		if (offsetNode instanceof PropertyExpression) {
+			populateItemsFromPropertyExpression((PropertyExpression) offsetNode, position, items);
+		} else if (parentNode instanceof PropertyExpression) {
+			populateItemsFromPropertyExpression((PropertyExpression) parentNode, position, items);
 		}
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
+	}
+
+	private void populateItemsFromPropertyExpression(PropertyExpression propExpr, Position position,
+			List<CompletionItem> items) {
+		Range propertyRange = GroovyLanguageServerUtils.astNodeToRange(propExpr.getProperty());
+		String memberName = getMemberName(propExpr.getPropertyAsString(), propertyRange, position);
+		populateItemsFromExpression(propExpr.getObjectExpression(), memberName, items);
+	}
+
+	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
+		List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
+		List<CompletionItem> propItems = properties.stream().filter(property -> {
+			return property.getName().startsWith(memberNamePrefix);
+		}).map(property -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(property.getName());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(property));
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(propItems);
+
+		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
+		Set<String> foundMethods = new HashSet<>();
+		List<CompletionItem> methodItems = methods.stream().filter(method -> {
+			String methodName = method.getName();
+			//overloads can cause duplicates
+			if (methodName.startsWith(memberNamePrefix) && !foundMethods.contains(methodName)) {
+				foundMethods.add(methodName);
+				return true;
+			}
+			return false;
+		}).map(method -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(method.getName());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(method));
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(methodItems);
+	}
+
+	private String getMemberName(String memberName, Range range, Position position) {
+		if (position.getLine() < range.getEnd().getLine() || position.getCharacter() < range.getEnd().getCharacter()) {
+			int length = position.getCharacter() - range.getStart().getCharacter();
+			if (length > 0 && length < memberName.length()) {
+				return memberName.substring(0, length);
+			}
+		}
+		return "";
 	}
 }
