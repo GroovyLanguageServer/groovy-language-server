@@ -194,7 +194,74 @@ class GroovyServicesCompletionTests {
 	}
 
 	@Test
-	void testMemberAccessWithExistingPropertyExpression() throws Exception {
+	void testMemberAccessWithPartialPropertyExpression() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public Completion() {\n");
+		contents.append("    String localVar\n");
+		contents.append("    localVar.charA\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 18);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertTrue(items.size() > 0);
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
+		}).collect(Collectors.toList());
+		Assertions.assertTrue(filteredItems.size() > 0);
+	}
+
+	@Test
+	void testMemberAccessWithSimilarNames() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public Completion() {\n");
+		contents.append("    this.abcde\n");
+		contents.append("  }\n");
+		contents.append("  public abc() {}\n");
+		contents.append("  public abcdef() {}\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+
+		//this first test should include both methods...
+		Position position = new Position(2, 11);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(2, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return (item.getLabel().equals("abc") && item.getKind().equals(CompletionItemKind.Method))
+					|| (item.getLabel().equals("abcdef") && item.getKind().equals(CompletionItemKind.Method));
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(2, filteredItems.size());
+
+		//...and this one should only include the one with the longer name
+		position = new Position(2, 13);
+		result = services.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		CompletionItem item = items.get(0);
+		Assertions.assertEquals("abcdef", item.getLabel());
+		Assertions.assertEquals(CompletionItemKind.Method, item.getKind());
+	}
+
+	@Test
+	void testMemberAccessWithExistingPropertyExpressionOnNextLine() throws Exception {
 		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
@@ -221,7 +288,7 @@ class GroovyServicesCompletionTests {
 	}
 
 	@Test
-	void testMemberAccessWithExistingMethodCallExpression() throws Exception {
+	void testMemberAccessWithExistingMethodCallExpressionOnNextLine() throws Exception {
 		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
