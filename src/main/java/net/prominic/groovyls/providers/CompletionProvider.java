@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -100,14 +101,22 @@ public class CompletionProvider {
 		Range varRange = GroovyLanguageServerUtils.astNodeToRange(varExpr);
 		String memberName = getMemberName(varExpr.getName(), varRange, position);
 		ClassNode enclosingClass = GroovyASTUtils.getEnclosingClass(varExpr, ast);
-		populateItemsFromProperties(enclosingClass.getProperties(), memberName, items);
+		populateItemsFromPropertiesAndFields(enclosingClass.getProperties(), enclosingClass.getFields(), memberName,
+				items);
 		populateItemsFromMethods(enclosingClass.getMethods(), memberName, items);
 	}
 
-	private void populateItemsFromProperties(List<PropertyNode> properties, String memberNamePrefix,
-			List<CompletionItem> items) {
+	private void populateItemsFromPropertiesAndFields(List<PropertyNode> properties, List<FieldNode> fields,
+			String memberNamePrefix, List<CompletionItem> items) {
+		Set<String> foundNames = new HashSet<>();
 		List<CompletionItem> propItems = properties.stream().filter(property -> {
-			return property.getName().startsWith(memberNamePrefix);
+			String name = property.getName();
+			//sometimes, a property and a field will have the same name
+			if (name.startsWith(memberNamePrefix) && !foundNames.contains(name)) {
+				foundNames.add(name);
+				return true;
+			}
+			return false;
 		}).map(property -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(property.getName());
@@ -115,6 +124,21 @@ public class CompletionProvider {
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(propItems);
+		List<CompletionItem> fieldItems = fields.stream().filter(field -> {
+			String name = field.getName();
+			//sometimes, a property and a field will have the same name
+			if (name.startsWith(memberNamePrefix) && !foundNames.contains(name)) {
+				foundNames.add(name);
+				return true;
+			}
+			return false;
+		}).map(field -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(field.getName());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(field));
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(fieldItems);
 	}
 
 	private void populateItemsFromMethods(List<MethodNode> methods, String memberNamePrefix,
@@ -139,7 +163,8 @@ public class CompletionProvider {
 
 	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
 		List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
-		populateItemsFromProperties(properties, memberNamePrefix, items);
+		List<FieldNode> fields = GroovyASTUtils.getFieldsForLeftSideOfPropertyExpression(leftSide, ast);
+		populateItemsFromPropertiesAndFields(properties, fields, memberNamePrefix, items);
 
 		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
 		populateItemsFromMethods(methods, memberNamePrefix, items);

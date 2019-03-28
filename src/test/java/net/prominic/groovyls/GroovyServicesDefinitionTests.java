@@ -467,4 +467,31 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
 		Assertions.assertEquals(36, location.getRange().getEnd().getCharacter());
 	}
+
+	@Test
+	void testDefinitionFromArrayItemMemberAccess() throws Exception {
+		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  public Definitions() {\n");
+		contents.append("    Definitions[] items\n");
+		contents.append("    items[0].hello\n");
+		contents.append("  }\n");
+		contents.append("  public String hello\n");
+		contents.append("}\n");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 15);
+		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
+				.get();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(5, location.getRange().getStart().getLine());
+		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(5, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(21, location.getRange().getEnd().getCharacter());
+	}
 }

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -85,7 +86,11 @@ public class GroovyASTUtils {
                 return GroovyASTUtils.getMethodFromCallExpression(methodCallExpression, astVisitor);
             } else if (parentNode instanceof PropertyExpression) {
                 PropertyExpression propertyExpression = (PropertyExpression) parentNode;
-                return GroovyASTUtils.getPropertyFromExpression(propertyExpression, astVisitor);
+                PropertyNode propNode = GroovyASTUtils.getPropertyFromExpression(propertyExpression, astVisitor);
+                if (propNode != null) {
+                    return propNode;
+                }
+                return GroovyASTUtils.getFieldFromExpression(propertyExpression, astVisitor);
             }
         } else if (node instanceof VariableExpression) {
             VariableExpression variableExpression = (VariableExpression) node;
@@ -140,28 +145,27 @@ public class GroovyASTUtils {
     }
 
     public static PropertyNode getPropertyFromExpression(PropertyExpression node, ASTNodeVisitor astVisitor) {
-        PropertyNode result = null;
-        if (node.getObjectExpression() instanceof ClassExpression) {
-            ClassExpression expression = (ClassExpression) node.getObjectExpression();
-            // This means it's an expression like this: SomeClass.someMethod
-            result = expression.getType().getProperty(node.getProperty().getText());
-        } else if (node.getObjectExpression() instanceof ConstructorCallExpression) {
-            ConstructorCallExpression expression = (ConstructorCallExpression) node.getObjectExpression();
-            // Local function, no class used (or technically this used).
-            result = expression.getType().getProperty(node.getProperty().getText());
-        } else if (node.getObjectExpression() instanceof VariableExpression) {
-            // function called on instance of some class
-            VariableExpression var = (VariableExpression) node.getObjectExpression();
-            if (var.getName().equals("this")) {
-                ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
-                if (enclosingClass != null) {
-                    result = enclosingClass.getProperty(node.getProperty().getText());
-                }
-            } else if (var.getOriginType() != null) {
-                result = var.getOriginType().getProperty(node.getProperty().getText());
-            }
+        ClassNode classNode = getTypeOfExpression(node.getObjectExpression(), astVisitor);
+        if (classNode != null) {
+            return classNode.getProperty(node.getProperty().getText());
         }
-        return result;
+        return null;
+    }
+
+    public static FieldNode getFieldFromExpression(PropertyExpression node, ASTNodeVisitor astVisitor) {
+        ClassNode classNode = getTypeOfExpression(node.getObjectExpression(), astVisitor);
+        if (classNode != null) {
+            return classNode.getField(node.getProperty().getText());
+        }
+        return null;
+    }
+
+    public static List<FieldNode> getFieldsForLeftSideOfPropertyExpression(Expression node, ASTNodeVisitor astVisitor) {
+        ClassNode classNode = getTypeOfExpression(node, astVisitor);
+        if (classNode != null) {
+            return classNode.getFields();
+        }
+        return Collections.emptyList();
     }
 
     public static List<PropertyNode> getPropertiesForLeftSideOfPropertyExpression(Expression node,
@@ -193,6 +197,10 @@ public class GroovyASTUtils {
             ClassExpression expression = (ClassExpression) node;
             // This means it's an expression like this: SomeClass.someProp
             return expression.getType();
+        } else if (node instanceof ConstructorCallExpression) {
+            ConstructorCallExpression expression = (ConstructorCallExpression) node;
+            // Local function, no class used (or technically this used).
+            return expression.getType();
         } else if (node instanceof VariableExpression) {
             // function called on instance of some class
             VariableExpression var = (VariableExpression) node;
@@ -211,25 +219,9 @@ public class GroovyASTUtils {
     public static List<MethodNode> getMethodOverloadsFromCallExpression(MethodCall node, ASTNodeVisitor astVisitor) {
         if (node instanceof MethodCallExpression) {
             MethodCallExpression methodCallExpr = (MethodCallExpression) node;
-            if (methodCallExpr.getObjectExpression() instanceof ClassExpression) {
-                ClassExpression expression = (ClassExpression) methodCallExpr.getObjectExpression();
-                // This means it's an expression like this: SomeClass.someMethod
-                return expression.getType().getMethods(methodCallExpr.getMethod().getText());
-            } else if (methodCallExpr.getObjectExpression() instanceof ConstructorCallExpression) {
-                ConstructorCallExpression expression = (ConstructorCallExpression) methodCallExpr.getObjectExpression();
-                // Local function, no class used (or technically this used).
-                return expression.getType().getMethods(methodCallExpr.getMethod().getText());
-            } else if (methodCallExpr.getObjectExpression() instanceof VariableExpression) {
-                // function called on instance of some class
-                VariableExpression var = (VariableExpression) methodCallExpr.getObjectExpression();
-                if (var.getName().equals("this")) {
-                    ClassNode enclosingClass = getEnclosingClass(methodCallExpr, astVisitor);
-                    if (enclosingClass != null) {
-                        return enclosingClass.getMethods(methodCallExpr.getMethod().getText());
-                    }
-                } else if (var.getOriginType() != null) {
-                    return var.getOriginType().getMethods(methodCallExpr.getMethod().getText());
-                }
+            ClassNode leftType = getTypeOfExpression(methodCallExpr.getObjectExpression(), astVisitor);
+            if (leftType != null) {
+                return leftType.getMethods(methodCallExpr.getMethod().getText());
             }
         } else if (node instanceof ConstructorCallExpression) {
             ConstructorCallExpression constructorCallExpr = (ConstructorCallExpression) node;
