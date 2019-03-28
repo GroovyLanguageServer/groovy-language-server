@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.eclipse.lsp4j.ParameterInformation;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -58,11 +58,11 @@ public class SignatureHelpProvider {
 			return CompletableFuture.completedFuture(new SignatureHelp(Collections.emptyList(), -1, -1));
 		}
 		int activeParamIndex = -1;
-		MethodCallExpression methodCall = null;
+		MethodCall methodCall = null;
 		ASTNode parentNode = ast.getParent(offsetNode);
 
 		if (offsetNode instanceof ArgumentListExpression) {
-			methodCall = (MethodCallExpression) parentNode;
+			methodCall = (MethodCall) parentNode;
 
 			ArgumentListExpression argsList = (ArgumentListExpression) offsetNode;
 			List<Expression> expressions = argsList.getExpressions();

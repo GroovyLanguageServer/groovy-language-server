@@ -20,6 +20,7 @@
 package net.prominic.groovyls.util;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -53,7 +54,19 @@ public class GroovyNodeToStringUtils {
 		return builder.toString();
 	}
 
+	public static String constructorToString(ConstructorNode constructorNode) {
+		StringBuilder builder = new StringBuilder();
+		builder.append(constructorNode.getDeclaringClass().getName());
+		builder.append("(");
+		builder.append(parametersToString(constructorNode.getParameters()));
+		builder.append(")");
+		return builder.toString();
+	}
+
 	public static String methodToString(MethodNode methodNode) {
+		if (methodNode instanceof ConstructorNode) {
+			return constructorToString((ConstructorNode) methodNode);
+		}
 		StringBuilder builder = new StringBuilder();
 		if (methodNode.isPublic()) {
 			if (!methodNode.isSyntheticPublic()) {
@@ -77,7 +90,13 @@ public class GroovyNodeToStringUtils {
 		builder.append(" ");
 		builder.append(methodNode.getName());
 		builder.append("(");
-		Parameter[] params = methodNode.getParameters();
+		builder.append(parametersToString(methodNode.getParameters()));
+		builder.append(")");
+		return builder.toString();
+	}
+
+	public static String parametersToString(Parameter[] params) {
+		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < params.length; i++) {
 			if (i > 0) {
 				builder.append(", ");
@@ -85,7 +104,6 @@ public class GroovyNodeToStringUtils {
 			Parameter paramNode = params[i];
 			builder.append(variableToString(paramNode));
 		}
-		builder.append(")");
 		return builder.toString();
 	}
 

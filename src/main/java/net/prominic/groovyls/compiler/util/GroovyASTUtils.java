@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -65,7 +66,7 @@ public class GroovyASTUtils {
             return tryToResolveOriginalClassNode((ClassNode) node, strict, astVisitor);
         } else if (node instanceof ConstructorCallExpression) {
             ConstructorCallExpression callExpression = (ConstructorCallExpression) node;
-            return tryToResolveOriginalClassNode(callExpression.getType(), strict, astVisitor);
+            return GroovyASTUtils.getMethodFromCallExpression(callExpression, astVisitor);
         } else if (node instanceof DeclarationExpression) {
             DeclarationExpression declExpression = (DeclarationExpression) node;
             if (!declExpression.isMultipleAssignmentDeclaration()) {
@@ -204,37 +205,45 @@ public class GroovyASTUtils {
         return Collections.emptyList();
     }
 
-    public static List<MethodNode> getMethodOverloadsFromCallExpression(MethodCallExpression node,
-            ASTNodeVisitor astVisitor) {
-        if (node.getObjectExpression() instanceof ClassExpression) {
-            ClassExpression expression = (ClassExpression) node.getObjectExpression();
-            // This means it's an expression like this: SomeClass.someMethod
-            return expression.getType().getMethods(node.getMethod().getText());
-        } else if (node.getObjectExpression() instanceof ConstructorCallExpression) {
-            ConstructorCallExpression expression = (ConstructorCallExpression) node.getObjectExpression();
-            // Local function, no class used (or technically this used).
-            return expression.getType().getMethods(node.getMethod().getText());
-        } else if (node.getObjectExpression() instanceof VariableExpression) {
-            // function called on instance of some class
-            VariableExpression var = (VariableExpression) node.getObjectExpression();
-            if (var.getName().equals("this")) {
-                ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
-                if (enclosingClass != null) {
-                    return enclosingClass.getMethods(node.getMethod().getText());
+    public static List<MethodNode> getMethodOverloadsFromCallExpression(MethodCall node, ASTNodeVisitor astVisitor) {
+        if (node instanceof MethodCallExpression) {
+            MethodCallExpression methodCallExpr = (MethodCallExpression) node;
+            if (methodCallExpr.getObjectExpression() instanceof ClassExpression) {
+                ClassExpression expression = (ClassExpression) methodCallExpr.getObjectExpression();
+                // This means it's an expression like this: SomeClass.someMethod
+                return expression.getType().getMethods(methodCallExpr.getMethod().getText());
+            } else if (methodCallExpr.getObjectExpression() instanceof ConstructorCallExpression) {
+                ConstructorCallExpression expression = (ConstructorCallExpression) methodCallExpr.getObjectExpression();
+                // Local function, no class used (or technically this used).
+                return expression.getType().getMethods(methodCallExpr.getMethod().getText());
+            } else if (methodCallExpr.getObjectExpression() instanceof VariableExpression) {
+                // function called on instance of some class
+                VariableExpression var = (VariableExpression) methodCallExpr.getObjectExpression();
+                if (var.getName().equals("this")) {
+                    ClassNode enclosingClass = getEnclosingClass(methodCallExpr, astVisitor);
+                    if (enclosingClass != null) {
+                        return enclosingClass.getMethods(methodCallExpr.getMethod().getText());
+                    }
+                } else if (var.getOriginType() != null) {
+                    return var.getOriginType().getMethods(methodCallExpr.getMethod().getText());
                 }
-            } else if (var.getOriginType() != null) {
-                return var.getOriginType().getMethods(node.getMethod().getText());
+            }
+        } else if (node instanceof ConstructorCallExpression) {
+            ConstructorCallExpression constructorCallExpr = (ConstructorCallExpression) node;
+            ClassNode constructorType = constructorCallExpr.getType();
+            if (constructorType != null) {
+                return constructorType.getDeclaredConstructors().stream().map(constructor -> (MethodNode) constructor)
+                        .collect(Collectors.toList());
             }
         }
         return Collections.emptyList();
     }
 
-    public static MethodNode getMethodFromCallExpression(MethodCallExpression node, ASTNodeVisitor astVisitor) {
+    public static MethodNode getMethodFromCallExpression(MethodCall node, ASTNodeVisitor astVisitor) {
         return getMethodFromCallExpression(node, astVisitor, -1);
     }
 
-    public static MethodNode getMethodFromCallExpression(MethodCallExpression node, ASTNodeVisitor astVisitor,
-            int argIndex) {
+    public static MethodNode getMethodFromCallExpression(MethodCall node, ASTNodeVisitor astVisitor, int argIndex) {
         List<MethodNode> possibleMethods = getMethodOverloadsFromCallExpression(node, astVisitor);
         if (!possibleMethods.isEmpty() && node.getArguments() instanceof ArgumentListExpression) {
             ArgumentListExpression actualArguments = (ArgumentListExpression) node.getArguments();
