@@ -29,11 +29,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
@@ -72,6 +74,8 @@ public class CompletionProvider {
 			populateItemsFromMethodCallExpression((MethodCallExpression) offsetNode, position, items);
 		} else if (parentNode instanceof MethodCallExpression) {
 			populateItemsFromMethodCallExpression((MethodCallExpression) parentNode, position, items);
+		} else if (offsetNode instanceof VariableExpression) {
+			populateItemsFromVariableExpression((VariableExpression) offsetNode, position, items);
 		}
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
@@ -91,8 +95,17 @@ public class CompletionProvider {
 		populateItemsFromExpression(methodCallExpr.getObjectExpression(), memberName, items);
 	}
 
-	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
-		List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
+	private void populateItemsFromVariableExpression(VariableExpression varExpr, Position position,
+			List<CompletionItem> items) {
+		Range varRange = GroovyLanguageServerUtils.astNodeToRange(varExpr);
+		String memberName = getMemberName(varExpr.getName(), varRange, position);
+		ClassNode enclosingClass = GroovyASTUtils.getEnclosingClass(varExpr, ast);
+		populateItemsFromProperties(enclosingClass.getProperties(), memberName, items);
+		populateItemsFromMethods(enclosingClass.getMethods(), memberName, items);
+	}
+
+	private void populateItemsFromProperties(List<PropertyNode> properties, String memberNamePrefix,
+			List<CompletionItem> items) {
 		List<CompletionItem> propItems = properties.stream().filter(property -> {
 			return property.getName().startsWith(memberNamePrefix);
 		}).map(property -> {
@@ -102,8 +115,10 @@ public class CompletionProvider {
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(propItems);
+	}
 
-		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
+	private void populateItemsFromMethods(List<MethodNode> methods, String memberNamePrefix,
+			List<CompletionItem> items) {
 		Set<String> foundMethods = new HashSet<>();
 		List<CompletionItem> methodItems = methods.stream().filter(method -> {
 			String methodName = method.getName();
@@ -122,11 +137,19 @@ public class CompletionProvider {
 		items.addAll(methodItems);
 	}
 
+	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
+		List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
+		populateItemsFromProperties(properties, memberNamePrefix, items);
+
+		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
+		populateItemsFromMethods(methods, memberNamePrefix, items);
+	}
+
 	private String getMemberName(String memberName, Range range, Position position) {
 		if (position.getLine() == range.getStart().getLine()
 				&& position.getCharacter() > range.getStart().getCharacter()) {
 			int length = position.getCharacter() - range.getStart().getCharacter();
-			if (length > 0 && length < memberName.length()) {
+			if (length > 0 && length <= memberName.length()) {
 				return memberName.substring(0, length);
 			}
 		}
