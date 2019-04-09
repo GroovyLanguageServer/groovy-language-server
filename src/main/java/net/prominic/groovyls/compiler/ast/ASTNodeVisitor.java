@@ -35,7 +35,9 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -257,6 +259,36 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 			super.visitClass(node);
 		} finally {
 			popASTNode();
+		}
+	}
+
+	@Override
+	public void visitImports(ModuleNode node) {
+		if (node != null) {
+			for (ImportNode importNode : node.getImports()) {
+				pushASTNode(importNode);
+				visitAnnotations(importNode);
+				importNode.visit(this);
+				popASTNode();
+			}
+			for (ImportNode importStarNode : node.getStarImports()) {
+				pushASTNode(importStarNode);
+				visitAnnotations(importStarNode);
+				importStarNode.visit(this);
+				popASTNode();
+			}
+			for (ImportNode importStaticNode : node.getStaticImports().values()) {
+				pushASTNode(importStaticNode);
+				visitAnnotations(importStaticNode);
+				importStaticNode.visit(this);
+				popASTNode();
+			}
+			for (ImportNode importStaticStarNode : node.getStaticStarImports().values()) {
+				pushASTNode(importStaticStarNode);
+				visitAnnotations(importStaticStarNode);
+				importStaticStarNode.visit(this);
+				popASTNode();
+			}
 		}
 	}
 

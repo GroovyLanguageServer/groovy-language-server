@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -78,6 +79,9 @@ public class GroovyASTUtils {
         } else if (node instanceof ClassExpression) {
             ClassExpression classExpression = (ClassExpression) node;
             return tryToResolveOriginalClassNode(classExpression.getType(), strict, astVisitor);
+        } else if (node instanceof ImportNode) {
+            ImportNode importNode = (ImportNode) node;
+            return tryToResolveOriginalClassNode(importNode.getType(), strict, astVisitor);
         } else if (node instanceof MethodNode) {
             return node;
         } else if (node instanceof ConstantExpression && parentNode != null) {

@@ -404,6 +404,38 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
 	}
 
+	@Test
+	void testClassDefinitionFromImport() throws Exception {
+		Path filePath = srcRoot.resolve("Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+
+		Path filePath2 = srcRoot.resolve("Definitions2.groovy");
+		String uri2 = filePath2.toUri().toString();
+		StringBuilder contents2 = new StringBuilder();
+		contents2.append("import Definitions\n");
+		contents2.append("class Definitions2 {\n");
+		contents2.append("}");
+		TextDocumentItem textDocumentItem2 = new TextDocumentItem(uri2, LANGUAGE_GROOVY, 1, contents2.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem2));
+
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri2);
+		Position position = new Position(0, 10);
+		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
+				.get();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
+	}
+
 	//--- parameters
 
 	@Test
