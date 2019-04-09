@@ -36,10 +36,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
-import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -78,9 +76,9 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.control.ErrorCollectorWithoutThrow;
 import net.prominic.groovyls.compiler.control.GroovyCompilationUnit;
-import net.prominic.groovyls.compiler.control.io.StringReaderSourceWithURI;
+import net.prominic.groovyls.compiler.control.ICompilationUnitFactory;
+import net.prominic.groovyls.compiler.control.CompilationUnitFactory;
 import net.prominic.groovyls.providers.CompletionProvider;
 import net.prominic.groovyls.providers.DefinitionProvider;
 import net.prominic.groovyls.providers.DocumentSymbolProvider;
@@ -94,40 +92,25 @@ import net.prominic.groovyls.util.FileContentsTracker;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class GroovyServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
-	private static final String FILE_EXTENSION_GROOVY = ".groovy";
-	private static final String FILE_EXTENSION_JAVA = ".java";
-
 	private LanguageClient languageClient;
 
-	private CompilerConfiguration compilerConfig;
+	private Path workspaceRoot;
+	private ICompilationUnitFactory compilationUnitFactory;
 	private GroovyCompilationUnit compilationUnit;
 	private ASTNodeVisitor astVisitor;
 	private Map<URI, List<Diagnostic>> prevDiagnosticsByFile;
-	private Path tempDirectoryPath;
-	@SuppressWarnings("unused")
-	private Path workspaceRoot;
-	private Path srcMainGroovyPath;
-	private Path srcMainJavaPath;
-	private Path srcTestGroovyPath;
-	private Path srcTestJavaPath;
 	private FileContentsTracker fileContentsTracker = new FileContentsTracker();
 
 	public GroovyServices() {
-		try {
-			tempDirectoryPath = Files.createTempDirectory("groovylc");
-		} catch (IOException e) {
-			System.err.println("Failed to create temporary directory");
-		}
-		compilerConfig = new CompilerConfiguration();
-		compilerConfig.setTargetDirectory(tempDirectoryPath.toFile());
+		this(new CompilationUnitFactory());
+	}
+
+	public GroovyServices(ICompilationUnitFactory factory) {
+		compilationUnitFactory = factory;
 	}
 
 	public void setWorkspaceRoot(Path workspaceRoot) {
 		this.workspaceRoot = workspaceRoot;
-		srcMainGroovyPath = workspaceRoot.resolve("src/main/groovy");
-		srcMainJavaPath = workspaceRoot.resolve("src/main/java");
-		srcTestGroovyPath = workspaceRoot.resolve("src/test/groovy");
-		srcTestJavaPath = workspaceRoot.resolve("src/test/java");
 		createOrUpdateCompilationUnit();
 	}
 
@@ -332,63 +315,26 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	}
 
 	private void createOrUpdateCompilationUnit() {
-		File tempDirectory = tempDirectoryPath.toFile();
-		if (tempDirectory.exists()) {
-			try {
-				Files.walk(tempDirectoryPath).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-			} catch (IOException e) {
-				System.err.println("Failed to delete target directory: " + tempDirectoryPath);
-				return;
-			}
-		}
-		if (!tempDirectory.mkdir()) {
-			System.err.println("Failed to create target directory: " + tempDirectoryPath);
-			return;
-		}
-		compilationUnit = new GroovyCompilationUnit(compilerConfig, new ErrorCollectorWithoutThrow(compilerConfig));
-		addDirectoryToCompilationUnit(srcMainGroovyPath, true, true);
-		addDirectoryToCompilationUnit(srcMainJavaPath, false, true);
-		addDirectoryToCompilationUnit(srcTestGroovyPath, true, true);
-		addDirectoryToCompilationUnit(srcTestJavaPath, false, true);
-		fileContentsTracker.getOpenURIs().forEach(uri -> {
-			Path path = Paths.get(uri);
-			String contents = fileContentsTracker.getContents(uri);
-			SourceUnit sourceUnit = new SourceUnit(path.toString(),
-					new StringReaderSourceWithURI(contents, uri, compilationUnit.getConfiguration()),
-					compilationUnit.getConfiguration(), compilationUnit.getClassLoader(),
-					compilationUnit.getErrorCollector());
-			compilationUnit.addSource(sourceUnit);
-		});
-	}
-
-	private void addDirectoryToCompilationUnit(Path dirPath, boolean allowGroovy, boolean allowJava) {
-		if (!dirPath.toFile().exists()) {
-			return;
-		}
-		try {
-			Files.walk(dirPath).forEach((filePath) -> {
-				if (filePath.endsWith(FILE_EXTENSION_GROOVY)) {
-					if (!allowGroovy) {
-						return;
-					}
-				} else if (!filePath.endsWith(FILE_EXTENSION_JAVA)) {
-					if (!allowJava) {
-						return;
-					}
-				} else {
+		if (compilationUnit != null) {
+			File targetDirectory = compilationUnit.getConfiguration().getTargetDirectory();
+			if (targetDirectory != null && targetDirectory.exists()) {
+				try {
+					Files.walk(targetDirectory.toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile)
+							.forEach(File::delete);
+				} catch (IOException e) {
+					System.err.println("Failed to delete target directory: " + targetDirectory.getAbsolutePath());
 					return;
 				}
-				URI fileURI = filePath.toUri();
-				// skip files that are open in memory
-				if (!fileContentsTracker.isOpen(fileURI)) {
-					File file = filePath.toFile();
-					if (file.isFile()) {
-						compilationUnit.addSource(file);
-					}
-				}
-			});
-		} catch (IOException e) {
-			System.err.println("Failed to walk directory for source files: " + dirPath);
+			}
+		}
+
+		compilationUnit = compilationUnitFactory.create(workspaceRoot, fileContentsTracker);
+
+		if (compilationUnit != null) {
+			File targetDirectory = compilationUnit.getConfiguration().getTargetDirectory();
+			if (targetDirectory != null && !targetDirectory.exists() && !targetDirectory.mkdirs()) {
+				System.err.println("Failed to create target directory: " + targetDirectory.getAbsolutePath());
+			}
 		}
 	}
 

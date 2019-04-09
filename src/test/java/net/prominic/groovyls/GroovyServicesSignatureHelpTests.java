@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -44,13 +45,21 @@ import org.junit.jupiter.api.Test;
 
 class GroovyServicesSignatureHelpTests {
 	private static final String LANGUAGE_GROOVY = "groovy";
+	private static final String PATH_WORKSPACE = "./build/test_workspace/";
+	private static final String PATH_SRC = "./src/main/groovy";
 
 	private GroovyServices services;
 	private Path workspaceRoot;
+	private Path srcRoot;
 
 	@BeforeEach
 	void setup() {
-		workspaceRoot = Paths.get("./test_workspace");
+		workspaceRoot = Paths.get(System.getProperty("user.dir")).resolve(PATH_WORKSPACE);
+		srcRoot = workspaceRoot.resolve(PATH_SRC);
+		if (!Files.exists(srcRoot)) {
+			srcRoot.toFile().mkdirs();
+		}
+
 		services = new GroovyServices();
 		services.setWorkspaceRoot(workspaceRoot);
 		services.connect(new LanguageClient() {
@@ -85,11 +94,13 @@ class GroovyServicesSignatureHelpTests {
 	@AfterEach
 	void tearDown() {
 		services = null;
+		workspaceRoot = null;
+		srcRoot = null;
 	}
 
 	@Test
 	void testSignatureHelpOnMethod() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
+		Path filePath = srcRoot.resolve("Completion.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class SignatureHelp {\n");
@@ -118,7 +129,7 @@ class GroovyServicesSignatureHelpTests {
 
 	@Test
 	void testSignatureHelpOnMethodWithMultipleParameters() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
+		Path filePath = srcRoot.resolve("Completion.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class SignatureHelp {\n");
@@ -149,7 +160,7 @@ class GroovyServicesSignatureHelpTests {
 
 	@Test
 	void testSignatureHelpOnMethodWithActiveParameter() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Completion.groovy");
+		Path filePath = srcRoot.resolve("Completion.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class SignatureHelp {\n");

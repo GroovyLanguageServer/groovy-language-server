@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -42,13 +43,21 @@ import org.junit.jupiter.api.Test;
 
 class GroovyServicesTypeDefinitionTests {
 	private static final String LANGUAGE_GROOVY = "groovy";
+	private static final String PATH_WORKSPACE = "./build/test_workspace/";
+	private static final String PATH_SRC = "./src/main/groovy";
 
 	private GroovyServices services;
 	private Path workspaceRoot;
+	private Path srcRoot;
 
 	@BeforeEach
 	void setup() {
-		workspaceRoot = Paths.get("./test_workspace");
+		workspaceRoot = Paths.get(System.getProperty("user.dir")).resolve(PATH_WORKSPACE);
+		srcRoot = workspaceRoot.resolve(PATH_SRC);
+		if (!Files.exists(srcRoot)) {
+			srcRoot.toFile().mkdirs();
+		}
+
 		services = new GroovyServices();
 		services.setWorkspaceRoot(workspaceRoot);
 		services.connect(new LanguageClient() {
@@ -83,13 +92,15 @@ class GroovyServicesTypeDefinitionTests {
 	@AfterEach
 	void tearDown() {
 		services = null;
+		workspaceRoot = null;
+		srcRoot = null;
 	}
 
 	// --- local variables
 
 	@Test
 	void testLocalVariableTypeDefinitionFromDeclaration() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -114,7 +125,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testLocalVariableTypeDefinitionFromAssignment() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -140,7 +151,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testLocalVariableTypeDefinitionFromMethodCall() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -170,7 +181,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testMemberVariableTypeDefinitionFromDeclaration() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -193,7 +204,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testMemberVariableTypeDefinitionFromAssignment() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -221,7 +232,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testMemberMethodTypeDefinitionFromDeclaration() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -245,7 +256,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testMemberMethodTypeDefinitionFromCall() throws Exception {
-		Path filePath = workspaceRoot.resolve("./src/main/java/Definitions.groovy");
+		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
