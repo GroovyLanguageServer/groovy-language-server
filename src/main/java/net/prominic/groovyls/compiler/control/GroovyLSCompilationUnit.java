@@ -23,14 +23,10 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 
-public class GroovyCompilationUnit extends CompilationUnit {
-	public GroovyCompilationUnit(CompilerConfiguration config) {
+public class GroovyLSCompilationUnit extends CompilationUnit {
+	public GroovyLSCompilationUnit(CompilerConfiguration config) {
 		super(config);
-	}
-
-	public GroovyCompilationUnit(CompilerConfiguration config, ErrorCollector errorCollector) {
-		super(config);
-		this.errorCollector = errorCollector;
+		this.errorCollector = new ErrorCollectorWithoutThrow(config);
 	}
 
 	public void setErrorCollector(ErrorCollector errorCollector) {

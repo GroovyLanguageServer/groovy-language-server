@@ -43,6 +43,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import net.prominic.groovyls.config.CompilationUnitFactory;
+
 class GroovyServicesSignatureHelpTests {
 	private static final String LANGUAGE_GROOVY = "groovy";
 	private static final String PATH_WORKSPACE = "./build/test_workspace/";
@@ -60,7 +62,7 @@ class GroovyServicesSignatureHelpTests {
 			srcRoot.toFile().mkdirs();
 		}
 
-		services = new GroovyServices();
+		services = new GroovyServices(new CompilationUnitFactory());
 		services.setWorkspaceRoot(workspaceRoot);
 		services.connect(new LanguageClient() {
 

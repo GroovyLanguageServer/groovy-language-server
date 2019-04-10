@@ -76,9 +76,8 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.control.GroovyCompilationUnit;
-import net.prominic.groovyls.compiler.control.ICompilationUnitFactory;
-import net.prominic.groovyls.compiler.control.CompilationUnitFactory;
+import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
+import net.prominic.groovyls.config.ICompilationUnitFactory;
 import net.prominic.groovyls.providers.CompletionProvider;
 import net.prominic.groovyls.providers.DefinitionProvider;
 import net.prominic.groovyls.providers.DocumentSymbolProvider;
@@ -96,14 +95,10 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	private Path workspaceRoot;
 	private ICompilationUnitFactory compilationUnitFactory;
-	private GroovyCompilationUnit compilationUnit;
+	private GroovyLSCompilationUnit compilationUnit;
 	private ASTNodeVisitor astVisitor;
 	private Map<URI, List<Diagnostic>> prevDiagnosticsByFile;
 	private FileContentsTracker fileContentsTracker = new FileContentsTracker();
-
-	public GroovyServices() {
-		this(new CompilationUnitFactory());
-	}
 
 	public GroovyServices(ICompilationUnitFactory factory) {
 		compilationUnitFactory = factory;

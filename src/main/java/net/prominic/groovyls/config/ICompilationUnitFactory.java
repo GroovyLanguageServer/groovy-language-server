@@ -17,12 +17,13 @@
 // No warranty of merchantability or fitness of any kind. 
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
-package net.prominic.groovyls.compiler.control;
+package net.prominic.groovyls.config;
 
 import java.nio.file.Path;
 
+import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
 import net.prominic.groovyls.util.FileContentsTracker;
 
 public interface ICompilationUnitFactory {
-	public GroovyCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker);
+	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker);
 }

@@ -17,7 +17,7 @@
 // No warranty of merchantability or fitness of any kind. 
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
-package net.prominic.groovyls.compiler.control;
+package net.prominic.groovyls.config;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 
+import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
 import net.prominic.groovyls.compiler.control.io.StringReaderSourceWithURI;
 import net.prominic.groovyls.util.FileContentsTracker;
 
@@ -41,7 +42,7 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	public CompilationUnitFactory() {
 	}
 
-	public GroovyCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
+	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
 		CompilerConfiguration config = new CompilerConfiguration();
 
 		Path targetPath = workspaceRoot.resolve(RELATIVE_PATH_TARGET);
@@ -50,15 +51,14 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 
 		config.setTargetDirectory(targetPath.toFile());
 
-		GroovyCompilationUnit compilationUnit = new GroovyCompilationUnit(config,
-				new ErrorCollectorWithoutThrow(config));
+		GroovyLSCompilationUnit compilationUnit = new GroovyLSCompilationUnit(config);
 		addDirectoryToCompilationUnit(srcMainGroovyPath, compilationUnit, fileContentsTracker);
 		addDirectoryToCompilationUnit(srcTestGroovyPath, compilationUnit, fileContentsTracker);
 
 		return compilationUnit;
 	}
 
-	protected void addDirectoryToCompilationUnit(Path dirPath, GroovyCompilationUnit compilationUnit,
+	protected void addDirectoryToCompilationUnit(Path dirPath, GroovyLSCompilationUnit compilationUnit,
 			FileContentsTracker fileContentsTracker) {
 		try {
 			if (Files.exists(dirPath)) {

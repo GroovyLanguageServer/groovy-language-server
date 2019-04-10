@@ -38,6 +38,9 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import net.prominic.groovyls.config.CompilationUnitFactory;
+import net.prominic.groovyls.config.ICompilationUnitFactory;
+
 public class GroovyLanguageServer implements LanguageServer, LanguageClientAware {
 
     public static void main(String[] args) {
@@ -51,7 +54,11 @@ public class GroovyLanguageServer implements LanguageServer, LanguageClientAware
     private GroovyServices groovyServices;
 
     public GroovyLanguageServer() {
-        this.groovyServices = new GroovyServices();
+        this(new CompilationUnitFactory());
+    }
+
+    public GroovyLanguageServer(ICompilationUnitFactory compilationUnitFactory) {
+        this.groovyServices = new GroovyServices(compilationUnitFactory);
     }
 
     @Override
