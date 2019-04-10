@@ -3,8 +3,13 @@ plugins {
   id "java"
 }
 
+compileJava {
+  sourceCompatibility = "1.8"
+  targetCompatibility = "1.8"
+}
+
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }
 
 ext.mainClass = "net.prominic.groovyls.GroovyLanguageServer"
@@ -12,19 +17,19 @@ ext.mainClass = "net.prominic.groovyls.GroovyLanguageServer"
 tasks.build.dependsOn tasks.shadowJar
 
 shadowJar {
-	manifest {
-		attributes "Main-Class": "net.prominic.groovyls.GroovyLanguageServer"
-	}
+  manifest {
+    attributes "Main-Class": "net.prominic.groovyls.GroovyLanguageServer"
+  }
 }
 
 repositories  {
-	mavenCentral()
+  mavenCentral()
 }
 
 dependencies {
-	compile "org.eclipse.lsp4j:org.eclipse.lsp4j:0.6.0"
-	compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.6.0"
-	compile "org.codehaus.groovy:groovy-all:2.5.4"
-	testImplementation "org.junit.jupiter:junit-jupiter-api:5.1.0"
+  compile "org.eclipse.lsp4j:org.eclipse.lsp4j:0.6.0"
+  compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.6.0"
+  compile "org.codehaus.groovy:groovy-all:2.5.4"
+  testImplementation "org.junit.jupiter:junit-jupiter-api:5.1.0"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.1.0"
 }
