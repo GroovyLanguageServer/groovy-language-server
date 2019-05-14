@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
@@ -338,6 +339,12 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			compilationUnit.compile();
 		} catch (MultipleCompilationErrorsException e) {
 			// ignore
+		} catch (GroovyBugError e) {
+			System.err.println("Unexpected exception in language server when compiling Groovy.");
+			e.printStackTrace(System.err);
+		} catch (Exception e) {
+			System.err.println("Unexpected exception in language server when compiling Groovy.");
+			e.printStackTrace(System.err);
 		}
 		Set<PublishDiagnosticsParams> diagnostics = handleErrorCollector(compilationUnit.getErrorCollector());
 		diagnostics.stream().forEach(languageClient::publishDiagnostics);
