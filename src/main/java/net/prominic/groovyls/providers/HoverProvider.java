@@ -50,6 +50,12 @@ public class HoverProvider {
 		List<Either<String, MarkedString>> contents = new ArrayList<>();
 		hover.setContents(contents);
 
+		if (ast == null) {
+			//this shouldn't happen, but let's avoid an exception if something
+			//goes terribly wrong.
+			return CompletableFuture.completedFuture(hover);
+		}
+
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 

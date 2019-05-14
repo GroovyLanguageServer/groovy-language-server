@@ -42,6 +42,11 @@ public class DefinitionProvider {
 
 	public CompletableFuture<List<? extends Location>> provideDefinition(TextDocumentIdentifier textDocument,
 			Position position) {
+		if (ast == null) {
+			//this shouldn't happen, but let's avoid an exception if something
+			//goes terribly wrong.
+			return CompletableFuture.completedFuture(Collections.emptyList());
+		}
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 

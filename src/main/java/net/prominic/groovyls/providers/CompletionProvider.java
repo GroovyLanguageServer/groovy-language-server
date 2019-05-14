@@ -58,6 +58,11 @@ public class CompletionProvider {
 
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> provideCompletion(
 			TextDocumentIdentifier textDocument, Position position, CompletionContext context) {
+		if (ast == null) {
+			//this shouldn't happen, but let's avoid an exception if something
+			//goes terribly wrong.
+			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
+		}
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 		if (offsetNode == null) {

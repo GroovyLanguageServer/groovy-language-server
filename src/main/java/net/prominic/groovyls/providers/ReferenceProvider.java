@@ -43,6 +43,11 @@ public class ReferenceProvider {
 
 	public CompletableFuture<List<? extends Location>> provideReferences(TextDocumentIdentifier textDocument,
 			Position position) {
+		if (ast == null) {
+			//this shouldn't happen, but let's avoid an exception if something
+			//goes terribly wrong.
+			return CompletableFuture.completedFuture(Collections.emptyList());
+		}
 		URI documentURI = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(documentURI, position.getLine(), position.getCharacter());
 		if (offsetNode == null) {

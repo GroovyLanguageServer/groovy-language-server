@@ -20,6 +20,7 @@
 package net.prominic.groovyls.providers;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -43,6 +44,11 @@ public class WorkspaceSymbolProvider {
 	}
 
 	public CompletableFuture<List<? extends SymbolInformation>> provideWorkspaceSymbols(String query) {
+		if (ast == null) {
+			//this shouldn't happen, but let's avoid an exception if something
+			//goes terribly wrong.
+			return CompletableFuture.completedFuture(Collections.emptyList());
+		}
 		String lowerCaseQuery = query.toLowerCase();
 		List<ASTNode> nodes = ast.getNodes();
 		List<SymbolInformation> symbols = nodes.stream().filter(node -> {

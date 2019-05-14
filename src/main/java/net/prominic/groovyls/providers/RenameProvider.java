@@ -70,6 +70,11 @@ public class RenameProvider {
 		List<Either<TextDocumentEdit, ResourceOperation>> documentChanges = new ArrayList<>();
 		WorkspaceEdit workspaceEdit = new WorkspaceEdit(documentChanges);
 
+		if (ast == null) {
+			//this shouldn't happen, but let's avoid an exception if something
+			//goes terribly wrong.
+			return CompletableFuture.completedFuture(workspaceEdit);
+		}
 		URI documentURI = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(documentURI, position.getLine(), position.getCharacter());
 		if (offsetNode == null) {
