@@ -39,6 +39,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -336,7 +337,10 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	private void compile(Set<URI> uris) {
 		try {
-			compilationUnit.compile();
+			//AST is completely built after the canonicalization phase
+			//for code intelligence, we shouldn't need to go further
+			//http://groovy-lang.org/metaprogramming.html#_compilation_phases_guide
+			compilationUnit.compile(Phases.CANONICALIZATION);
 		} catch (MultipleCompilationErrorsException e) {
 			// ignore
 		} catch (GroovyBugError e) {
