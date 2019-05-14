@@ -21,6 +21,7 @@ package net.prominic.groovyls.compiler.ast;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -112,7 +113,8 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	private Stack<ASTNode> stack = new Stack<>();
-	private Set<ASTNode> nodes = new HashSet<>();
+	private Set<ASTNode> allNodes = new HashSet<>();
+	private Map<URI, List<ASTNode>> nodesByURI = new HashMap<>();
 	private Set<ClassNode> classNodes = new HashSet<>();
 	private Map<ASTNode, ASTNodeLookupData> lookup = new HashMap<>();
 
@@ -123,10 +125,15 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 			isSynthetic = annotatedNode.isSynthetic();
 		}
 		if (!isSynthetic) {
+			URI uri = sourceUnit.getSource().getURI();
+			if (!nodesByURI.containsKey(uri)) {
+				nodesByURI.put(uri, new ArrayList<>());
+			}
+			List<ASTNode> nodes = nodesByURI.get(uri);
 			nodes.add(node);
 
 			ASTNodeLookupData data = new ASTNodeLookupData();
-			data.uri = sourceUnit.getSource().getURI();
+			data.uri = uri;
 			if (stack.size() > 0) {
 				data.parent = stack.lastElement();
 			}
@@ -145,25 +152,23 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public List<ASTNode> getNodes() {
-		return new ArrayList<>(nodes);
+		return new ArrayList<>(allNodes);
 	}
 
 	public List<ASTNode> getNodes(URI uri) {
-		return nodes.stream().filter(node -> {
-			ASTNodeLookupData lookupData = lookup.get(node);
-			if (lookupData == null) {
-				return false;
-			}
-			if (!lookupData.uri.equals(uri)) {
-				return false;
-			}
-			return true;
-		}).collect(Collectors.toList());
+		if (!nodesByURI.containsKey(uri)) {
+			return Collections.emptyList();
+		}
+		return nodesByURI.get(uri);
 	}
 
 	public ASTNode getNodeAtLineAndColumn(URI uri, int line, int column) {
 		Position position = new Position(line, column);
 		Map<ASTNode, Range> nodeToRange = new HashMap<>();
+		List<ASTNode> nodes = nodesByURI.get(uri);
+		if (nodes == null) {
+			return null;
+		}
 		List<ASTNode> foundNodes = nodes.stream().filter(node -> {
 			ASTNodeLookupData lookupData = lookup.get(node);
 			if (lookupData == null) {
