@@ -33,3 +33,11 @@ dependencies {
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.1.0"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.1.0"
 }
+
+// assuming that Moonshine-IDE is checked out in a folder that has the same
+// parent folder as groovy-language-server, copies the built .jar file to the
+// appropriate location
+task deployMoonshine(type: Copy) {
+    from "build/libs/groovy-language-server-all.jar"
+    into "../Moonshine-IDE/ide/MoonshineSharedCore/src/elements/groovy-language-server/"
+}   
