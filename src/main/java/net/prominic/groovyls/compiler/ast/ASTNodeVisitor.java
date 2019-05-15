@@ -244,6 +244,10 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public void visitCompilationUnit(CompilationUnit unit) {
+		nodesByURI.clear();
+		allNodes.clear();
+		classNodes.clear();
+		lookup.clear();
 		unit.iterator().forEachRemaining(sourceUnit -> {
 			visitSourceUnit(sourceUnit);
 		});
