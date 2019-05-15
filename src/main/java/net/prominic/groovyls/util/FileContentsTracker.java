@@ -25,6 +25,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,9 +40,16 @@ import net.prominic.lsp.utils.Positions;
 public class FileContentsTracker {
 
 	private Map<URI, String> openFiles = new HashMap<>();
+	private Set<URI> changedFiles = new HashSet<>();
 
 	public Set<URI> getOpenURIs() {
 		return openFiles.keySet();
+	}
+
+	public Set<URI> getChangedURIs() {
+		Set<URI> result = changedFiles;
+		changedFiles = new HashSet<>();
+		return result;
 	}
 
 	public boolean isOpen(URI uri) {
@@ -51,6 +59,7 @@ public class FileContentsTracker {
 	public void didOpen(DidOpenTextDocumentParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		openFiles.put(uri, params.getTextDocument().getText());
+		changedFiles.add(uri);
 	}
 
 	public void didChange(DidChangeTextDocumentParams params) {
@@ -68,11 +77,13 @@ public class FileContentsTracker {
 			builder.append(oldText.substring(offset + change.getRangeLength()));
 			openFiles.put(uri, builder.toString());
 		}
+		changedFiles.add(uri);
 	}
 
 	public void didClose(DidCloseTextDocumentParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		openFiles.remove(uri);
+		changedFiles.add(uri);
 	}
 
 	public String getContents(URI uri) {

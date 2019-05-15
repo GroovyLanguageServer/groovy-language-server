@@ -21,6 +21,7 @@ package net.prominic.groovyls.compiler.ast;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -244,6 +245,27 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	public void visitCompilationUnit(CompilationUnit unit) {
 		unit.iterator().forEachRemaining(sourceUnit -> {
+			visitSourceUnit(sourceUnit);
+		});
+	}
+
+	public void visitCompilationUnit(CompilationUnit unit, Collection<URI> uris) {
+		uris.forEach(uri -> {
+			//clear all old nodes so that they may be replaced
+			List<ASTNode> nodes = nodesByURI.remove(uri);
+			if (nodes != null) {
+				nodes.forEach(node -> {
+					lookup.remove(node);
+				});
+				allNodes.removeAll(nodes);
+				classNodes.removeAll(nodes);
+			}
+		});
+		unit.iterator().forEachRemaining(sourceUnit -> {
+			URI uri = sourceUnit.getSource().getURI();
+			if (!uris.contains(uri)) {
+				return;
+			}
 			visitSourceUnit(sourceUnit);
 		});
 	}

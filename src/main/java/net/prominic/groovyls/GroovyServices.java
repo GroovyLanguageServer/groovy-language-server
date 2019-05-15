@@ -121,34 +121,43 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
 		fileContentsTracker.didOpen(params);
-		createOrUpdateCompilationUnit();
-
+		boolean isSameUnit = createOrUpdateCompilationUnit();
+		compile();
 		URI uri = URI.create(params.getTextDocument().getUri());
-		compile(Collections.singleton(uri));
-
-		visitAST();
+		Set<URI> uris = Collections.singleton(uri);
+		if (isSameUnit) {
+			visitAST(uris);
+		} else {
+			visitAST();
+		}
 	}
 
 	@Override
 	public void didChange(DidChangeTextDocumentParams params) {
 		fileContentsTracker.didChange(params);
-		createOrUpdateCompilationUnit();
-
+		boolean isSameUnit = createOrUpdateCompilationUnit();
+		compile();
 		URI uri = URI.create(params.getTextDocument().getUri());
-		compile(Collections.singleton(uri));
-
-		visitAST();
+		Set<URI> uris = Collections.singleton(uri);
+		if (isSameUnit) {
+			visitAST(uris);
+		} else {
+			visitAST();
+		}
 	}
 
 	@Override
 	public void didClose(DidCloseTextDocumentParams params) {
 		fileContentsTracker.didClose(params);
-		createOrUpdateCompilationUnit();
-
+		boolean isSameUnit = createOrUpdateCompilationUnit();
+		compile();
 		URI uri = URI.create(params.getTextDocument().getUri());
-		compile(Collections.singleton(uri));
-
-		visitAST();
+		Set<URI> uris = Collections.singleton(uri);
+		if (isSameUnit) {
+			visitAST(uris);
+		} else {
+			visitAST();
+		}
 	}
 
 	@Override
@@ -158,11 +167,15 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
-		createOrUpdateCompilationUnit();
+		boolean isSameUnit = createOrUpdateCompilationUnit();
 		Set<URI> urisWithChanges = params.getChanges().stream().map(fileEvent -> URI.create(fileEvent.getUri()))
 				.collect(Collectors.toSet());
-		compile(urisWithChanges);
-		visitAST();
+		compile();
+		if (isSameUnit) {
+			visitAST(urisWithChanges);
+		} else {
+			visitAST();
+		}
 	}
 
 	@Override
@@ -311,7 +324,15 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		astVisitor.visitCompilationUnit(compilationUnit);
 	}
 
-	private void createOrUpdateCompilationUnit() {
+	private void visitAST(Set<URI> uris) {
+		if (astVisitor == null) {
+			visitAST();
+			return;
+		}
+		astVisitor.visitCompilationUnit(compilationUnit, uris);
+	}
+
+	private boolean createOrUpdateCompilationUnit() {
 		if (compilationUnit != null) {
 			File targetDirectory = compilationUnit.getConfiguration().getTargetDirectory();
 			if (targetDirectory != null && targetDirectory.exists()) {
@@ -320,11 +341,13 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 							.forEach(File::delete);
 				} catch (IOException e) {
 					System.err.println("Failed to delete target directory: " + targetDirectory.getAbsolutePath());
-					return;
+					compilationUnit = null;
+					return false;
 				}
 			}
 		}
 
+		GroovyLSCompilationUnit oldCompilationUnit = compilationUnit;
 		compilationUnit = compilationUnitFactory.create(workspaceRoot, fileContentsTracker);
 
 		if (compilationUnit != null) {
@@ -333,9 +356,11 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 				System.err.println("Failed to create target directory: " + targetDirectory.getAbsolutePath());
 			}
 		}
+
+		return compilationUnit != null && compilationUnit.equals(oldCompilationUnit);
 	}
 
-	private void compile(Set<URI> uris) {
+	private void compile() {
 		try {
 			//AST is completely built after the canonicalization phase
 			//for code intelligence, we shouldn't need to go further
