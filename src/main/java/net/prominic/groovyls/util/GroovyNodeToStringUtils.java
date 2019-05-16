@@ -48,7 +48,7 @@ public class GroovyNodeToStringUtils {
 
 		ClassNode superClass = classNode.getSuperClass();
 		if (superClass != null && !superClass.getName().equals(JAVA_OBJECT)) {
-			builder.append("extends ");
+			builder.append(" extends ");
 			builder.append(superClass.getNameWithoutPackage());
 		}
 		return builder.toString();
