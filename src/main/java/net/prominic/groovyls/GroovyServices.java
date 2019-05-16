@@ -320,6 +320,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	// --- INTERNAL
 
 	private void visitAST() {
+		if (compilationUnit == null) {
+			return;
+		}
 		astVisitor = new ASTNodeVisitor();
 		astVisitor.visitCompilationUnit(compilationUnit);
 	}
@@ -327,6 +330,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private void visitAST(Set<URI> uris) {
 		if (astVisitor == null) {
 			visitAST();
+			return;
+		}
+		if (compilationUnit == null) {
 			return;
 		}
 		astVisitor.visitCompilationUnit(compilationUnit, uris);
@@ -361,6 +367,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	}
 
 	private void compile() {
+		if (compilationUnit == null) {
+			return;
+		}
 		try {
 			//AST is completely built after the canonicalization phase
 			//for code intelligence, we shouldn't need to go further
