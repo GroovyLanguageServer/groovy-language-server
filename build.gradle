@@ -41,3 +41,7 @@ task deployMoonshine(type: Copy) {
     from "build/libs/groovy-language-server-all.jar"
     into "../Moonshine-IDE/ide/MoonshineSharedCore/src/elements/groovy-language-server/"
 }   
+task deployMoonshineTest(type: Copy) {
+    from "build/libs/groovy-language-server-all.jar"
+    into "../Moonshine-IDE/ide/MoonshineDESKTOPevolved/bin-debug/elements/groovy-language-server/"
+}   

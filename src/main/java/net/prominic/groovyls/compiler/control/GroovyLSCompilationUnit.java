@@ -19,17 +19,56 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.control;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.ErrorCollector;
+import org.codehaus.groovy.control.SourceUnit;
 
 public class GroovyLSCompilationUnit extends CompilationUnit {
 	public GroovyLSCompilationUnit(CompilerConfiguration config) {
 		super(config);
-		this.errorCollector = new ErrorCollectorWithoutThrow(config);
+		this.errorCollector = new LanguageServerErrorCollector(config);
 	}
 
-	public void setErrorCollector(ErrorCollector errorCollector) {
+	public void setErrorCollector(LanguageServerErrorCollector errorCollector) {
 		this.errorCollector = errorCollector;
+	}
+
+	public void removeSources(Collection<SourceUnit> sourceUnitsToRemove) {
+		for (SourceUnit sourceUnit : sourceUnitsToRemove) {
+			if (sourceUnit.getAST() != null) {
+				List<String> sourceUnitClassNames = sourceUnit.getAST().getClasses().stream()
+						.map(classNode -> classNode.getName()).collect(Collectors.toList());
+				generatedClasses.removeIf(groovyClass -> sourceUnitClassNames.contains(groovyClass.getName()));
+				for (String className : sourceUnitClassNames) {
+					summariesByPublicClassName.remove(className);
+					classSourcesByPublicClassName.remove(className);
+				}
+			}
+
+			summariesBySourceName.remove(sourceUnit.getName());
+			sources.remove(sourceUnit.getName());
+			names.remove(sourceUnit.getName());
+		}
+		//keep existing modules from other source units
+		List<ModuleNode> modules = ast.getModules();
+		ast = new CompileUnit(this.classLoader, null, this.configuration);
+		for (ModuleNode module : modules) {
+			if (!sourceUnitsToRemove.contains(module.getContext())) {
+				ast.addModule(module);
+			}
+		}
+		LanguageServerErrorCollector lsErrorCollector = (LanguageServerErrorCollector) errorCollector;
+		lsErrorCollector.clear();
+	}
+
+	public void removeSource(SourceUnit sourceUnit) {
+		removeSources(Collections.singletonList(sourceUnit));
 	}
 }

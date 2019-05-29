@@ -24,14 +24,23 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 
 /**
- * An ErrorCollector that does not throw errors so that it works better with
- * code intelligence in IDEs.
+ * A special ErrorCollector for language servers that can clear all errors and
+ * does not throw exceptions.
  */
-public class ErrorCollectorWithoutThrow extends ErrorCollector {
+public class LanguageServerErrorCollector extends ErrorCollector {
     private static final long serialVersionUID = 1L;
 
-    public ErrorCollectorWithoutThrow(CompilerConfiguration configuration) {
+    public LanguageServerErrorCollector(CompilerConfiguration configuration) {
         super(configuration);
+    }
+
+    public void clear() {
+        if (errors != null) {
+            errors.clear();
+        }
+        if (warnings != null) {
+            warnings.clear();
+        }
     }
 
     @Override
