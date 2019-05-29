@@ -1,0 +1,32 @@
+plugins {
+  id "com.moowork.node" version "1.3.1"
+}
+
+task build(type: Exec) {
+  inputs.file("package-lock.json")
+  inputs.file("webpack.config.js")
+  inputs.file("tsconfig.json")
+  inputs.dir("src")
+  outputs.dir("$buildDir")
+
+  def webpack = "$projectDir/node_modules/.bin/webpack"
+  if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows")) {
+    webpack += ".cmd";
+  }
+  commandLine "$webpack", "--mode", "production"
+}
+
+task copyJar(type: Copy) {
+    from "$projectDir/../build/libs/groovy-language-server-all.jar"
+    into "$buildDir/bin"
+}
+
+task copyLocal(type: Copy) {
+    from "$projectDir/package.json"
+    into "$buildDir"
+}
+
+tasks.build.dependsOn tasks.npmInstall
+tasks.build.dependsOn tasks.copyJar
+tasks.build.dependsOn tasks.copyLocal
+
