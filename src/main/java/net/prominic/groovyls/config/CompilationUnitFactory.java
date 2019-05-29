@@ -37,7 +37,6 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	private static final String FILE_EXTENSION_GROOVY = ".groovy";
 	private static final Path RELATIVE_PATH_SRC_MAIN_GROOVY = Paths.get("src/main/groovy");
 	private static final Path RELATIVE_PATH_SRC_TEST_GROOVY = Paths.get("src/test/groovy");
-	private static final Path RELATIVE_PATH_TARGET = Paths.get("build/classes/groovy/main");
 
 	public CompilationUnitFactory() {
 	}
@@ -45,11 +44,8 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
 		CompilerConfiguration config = new CompilerConfiguration();
 
-		Path targetPath = workspaceRoot.resolve(RELATIVE_PATH_TARGET);
 		Path srcMainGroovyPath = workspaceRoot.resolve(RELATIVE_PATH_SRC_MAIN_GROOVY);
 		Path srcTestGroovyPath = workspaceRoot.resolve(RELATIVE_PATH_SRC_TEST_GROOVY);
-
-		config.setTargetDirectory(targetPath.toFile());
 
 		GroovyLSCompilationUnit compilationUnit = new GroovyLSCompilationUnit(config);
 		addDirectoryToCompilationUnit(srcMainGroovyPath, compilationUnit, fileContentsTracker);
