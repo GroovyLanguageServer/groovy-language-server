@@ -69,7 +69,7 @@ public class HoverProvider {
 			return CompletableFuture.completedFuture(hover);
 		}
 
-		contents.add(Either.forLeft(content));
+		contents.add(Either.forRight(new MarkedString("groovy", content)));
 		return CompletableFuture.completedFuture(hover);
 	}
 
