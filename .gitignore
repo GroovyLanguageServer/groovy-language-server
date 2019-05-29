@@ -16,3 +16,9 @@
 .gradle/
 bin/
 build/
+
+# Maven
+target/
+
+# Node.js
+node_modules/
