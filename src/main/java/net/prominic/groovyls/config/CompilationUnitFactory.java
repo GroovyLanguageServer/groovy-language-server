@@ -35,8 +35,6 @@ import net.prominic.groovyls.util.FileContentsTracker;
 
 public class CompilationUnitFactory implements ICompilationUnitFactory {
 	private static final String FILE_EXTENSION_GROOVY = ".groovy";
-	private static final Path RELATIVE_PATH_SRC_MAIN_GROOVY = Paths.get("src/main/groovy");
-	private static final Path RELATIVE_PATH_SRC_TEST_GROOVY = Paths.get("src/test/groovy");
 
 	public CompilationUnitFactory() {
 	}
@@ -44,12 +42,15 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
 		CompilerConfiguration config = new CompilerConfiguration();
 
-		Path srcMainGroovyPath = workspaceRoot.resolve(RELATIVE_PATH_SRC_MAIN_GROOVY);
-		Path srcTestGroovyPath = workspaceRoot.resolve(RELATIVE_PATH_SRC_TEST_GROOVY);
-
 		GroovyLSCompilationUnit compilationUnit = new GroovyLSCompilationUnit(config);
-		addDirectoryToCompilationUnit(srcMainGroovyPath, compilationUnit, fileContentsTracker);
-		addDirectoryToCompilationUnit(srcTestGroovyPath, compilationUnit, fileContentsTracker);
+		if (workspaceRoot != null) {
+			addDirectoryToCompilationUnit(workspaceRoot, compilationUnit, fileContentsTracker);
+		} else {
+			fileContentsTracker.getOpenURIs().forEach(uri -> {
+				String contents = fileContentsTracker.getContents(uri);
+				addOpenFileToCompilationUnit(uri, contents, compilationUnit);
+			});
+		}
 
 		return compilationUnit;
 	}
@@ -81,11 +82,16 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 				return;
 			}
 			String contents = fileContentsTracker.getContents(uri);
-			SourceUnit sourceUnit = new SourceUnit(openPath.toString(),
-					new StringReaderSourceWithURI(contents, uri, compilationUnit.getConfiguration()),
-					compilationUnit.getConfiguration(), compilationUnit.getClassLoader(),
-					compilationUnit.getErrorCollector());
-			compilationUnit.addSource(sourceUnit);
+			addOpenFileToCompilationUnit(uri, contents, compilationUnit);
 		});
+	}
+
+	protected void addOpenFileToCompilationUnit(URI uri, String contents, GroovyLSCompilationUnit compilationUnit) {
+		Path filePath = Paths.get(uri);
+		SourceUnit sourceUnit = new SourceUnit(filePath.toString(),
+				new StringReaderSourceWithURI(contents, uri, compilationUnit.getConfiguration()),
+				compilationUnit.getConfiguration(), compilationUnit.getClassLoader(),
+				compilationUnit.getErrorCollector());
+		compilationUnit.addSource(sourceUnit);
 	}
 }

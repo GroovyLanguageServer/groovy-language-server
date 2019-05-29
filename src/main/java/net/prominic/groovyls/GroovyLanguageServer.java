@@ -63,9 +63,12 @@ public class GroovyLanguageServer implements LanguageServer, LanguageClientAware
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
-        URI uri = URI.create(params.getRootUri());
-        Path workspaceRoot = Paths.get(uri);
-        groovyServices.setWorkspaceRoot(workspaceRoot);
+        String rootUriString = params.getRootUri();
+        if (rootUriString != null) {
+            URI uri = URI.create(params.getRootUri());
+            Path workspaceRoot = Paths.get(uri);
+            groovyServices.setWorkspaceRoot(workspaceRoot);
+        }
 
         CompletionOptions completionOptions = new CompletionOptions(false, Arrays.asList("."));
         ServerCapabilities serverCapabilities = new ServerCapabilities();
