@@ -47,9 +47,15 @@ public class FileContentsTracker {
 	}
 
 	public Set<URI> getChangedURIs() {
-		Set<URI> result = changedFiles;
+		return changedFiles;
+	}
+
+	public void resetChangedFiles() {
 		changedFiles = new HashSet<>();
-		return result;
+	}
+
+	public void forceChanged(URI uri) {
+		changedFiles.add(uri);
 	}
 
 	public boolean isOpen(URI uri) {

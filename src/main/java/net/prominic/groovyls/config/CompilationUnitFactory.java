@@ -39,6 +39,10 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	public CompilationUnitFactory() {
 	}
 
+	public void invalidateCompilationUnit() {
+		// nothing to do at this time
+	}
+
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
 		CompilerConfiguration config = new CompilerConfiguration();
 

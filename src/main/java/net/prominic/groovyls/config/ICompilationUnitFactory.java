@@ -25,5 +25,14 @@ import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
 import net.prominic.groovyls.util.FileContentsTracker;
 
 public interface ICompilationUnitFactory {
+	/**
+	 * If this factory would normally reuse an existing compilation unit, forces
+	 * the creation of a new one.
+	 */
+	public void invalidateCompilationUnit();
+
+	/**
+	 * Returns a compilation unit.
+	 */
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker);
 }

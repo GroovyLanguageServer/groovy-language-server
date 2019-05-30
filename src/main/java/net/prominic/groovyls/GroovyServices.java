@@ -101,6 +101,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private ASTNodeVisitor astVisitor;
 	private Map<URI, List<Diagnostic>> prevDiagnosticsByFile;
 	private FileContentsTracker fileContentsTracker = new FileContentsTracker();
+	private URI previousContext = null;
 
 	public GroovyServices(ICompilationUnitFactory factory) {
 		compilationUnitFactory = factory;
@@ -121,43 +122,22 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
 		fileContentsTracker.didOpen(params);
-		boolean isSameUnit = createOrUpdateCompilationUnit();
-		compile();
 		URI uri = URI.create(params.getTextDocument().getUri());
-		Set<URI> uris = Collections.singleton(uri);
-		if (isSameUnit) {
-			visitAST(uris);
-		} else {
-			visitAST();
-		}
+		compileAndVisitAST(uri);
 	}
 
 	@Override
 	public void didChange(DidChangeTextDocumentParams params) {
 		fileContentsTracker.didChange(params);
-		boolean isSameUnit = createOrUpdateCompilationUnit();
-		compile();
 		URI uri = URI.create(params.getTextDocument().getUri());
-		Set<URI> uris = Collections.singleton(uri);
-		if (isSameUnit) {
-			visitAST(uris);
-		} else {
-			visitAST();
-		}
+		compileAndVisitAST(uri);
 	}
 
 	@Override
 	public void didClose(DidCloseTextDocumentParams params) {
 		fileContentsTracker.didClose(params);
-		boolean isSameUnit = createOrUpdateCompilationUnit();
-		compile();
 		URI uri = URI.create(params.getTextDocument().getUri());
-		Set<URI> uris = Collections.singleton(uri);
-		if (isSameUnit) {
-			visitAST(uris);
-		} else {
-			visitAST();
-		}
+		compileAndVisitAST(uri);
 	}
 
 	@Override
@@ -186,18 +166,22 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<Hover> hover(TextDocumentPositionParams params) {
+		URI uri = URI.create(params.getTextDocument().getUri());
+		recompileIfContextChanged(uri);
+
 		HoverProvider provider = new HoverProvider(astVisitor);
 		return provider.provideHover(params.getTextDocument(), params.getPosition());
 	}
 
 	@Override
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
-
-		String originalSource = null;
-
 		TextDocumentIdentifier textDocument = params.getTextDocument();
 		Position position = params.getPosition();
 		URI uri = URI.create(textDocument.getUri());
+
+		recompileIfContextChanged(uri);
+
+		String originalSource = null;
 		ASTNode offsetNode = astVisitor.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 		if (offsetNode == null) {
 			originalSource = fileContentsTracker.getContents(uri);
@@ -239,17 +223,22 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<List<? extends Location>> definition(TextDocumentPositionParams params) {
+		URI uri = URI.create(params.getTextDocument().getUri());
+		recompileIfContextChanged(uri);
+
 		DefinitionProvider provider = new DefinitionProvider(astVisitor);
 		return provider.provideDefinition(params.getTextDocument(), params.getPosition());
 	}
 
 	@Override
 	public CompletableFuture<SignatureHelp> signatureHelp(TextDocumentPositionParams params) {
-		String originalSource = null;
-
 		TextDocumentIdentifier textDocument = params.getTextDocument();
 		Position position = params.getPosition();
 		URI uri = URI.create(textDocument.getUri());
+
+		recompileIfContextChanged(uri);
+
+		String originalSource = null;
 		ASTNode offsetNode = astVisitor.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 		if (offsetNode == null) {
 			originalSource = fileContentsTracker.getContents(uri);
@@ -288,12 +277,18 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<List<? extends Location>> typeDefinition(TextDocumentPositionParams params) {
+		URI uri = URI.create(params.getTextDocument().getUri());
+		recompileIfContextChanged(uri);
+
 		TypeDefinitionProvider provider = new TypeDefinitionProvider(astVisitor);
 		return provider.provideTypeDefinition(params.getTextDocument(), params.getPosition());
 	}
 
 	@Override
 	public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
+		URI uri = URI.create(params.getTextDocument().getUri());
+		recompileIfContextChanged(uri);
+
 		ReferenceProvider provider = new ReferenceProvider(astVisitor);
 		return provider.provideReferences(params.getTextDocument(), params.getPosition());
 	}
@@ -301,6 +296,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	@Override
 	public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
 			DocumentSymbolParams params) {
+		URI uri = URI.create(params.getTextDocument().getUri());
+		recompileIfContextChanged(uri);
+
 		DocumentSymbolProvider provider = new DocumentSymbolProvider(astVisitor);
 		return provider.provideDocumentSymbols(params.getTextDocument());
 	}
@@ -313,6 +311,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
+		URI uri = URI.create(params.getTextDocument().getUri());
+		recompileIfContextChanged(uri);
+
 		RenameProvider provider = new RenameProvider(astVisitor, fileContentsTracker);
 		return provider.provideRename(params);
 	}
@@ -355,6 +356,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 		GroovyLSCompilationUnit oldCompilationUnit = compilationUnit;
 		compilationUnit = compilationUnitFactory.create(workspaceRoot, fileContentsTracker);
+		fileContentsTracker.resetChangedFiles();
 
 		if (compilationUnit != null) {
 			File targetDirectory = compilationUnit.getConfiguration().getTargetDirectory();
@@ -364,6 +366,26 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		}
 
 		return compilationUnit != null && compilationUnit.equals(oldCompilationUnit);
+	}
+
+	protected void recompileIfContextChanged(URI newContext) {
+		if (previousContext == null || previousContext.equals(newContext)) {
+			return;
+		}
+		fileContentsTracker.forceChanged(newContext);
+		compileAndVisitAST(newContext);
+	}
+
+	private void compileAndVisitAST(URI contextURI) {
+		Set<URI> uris = Collections.singleton(contextURI);
+		boolean isSameUnit = createOrUpdateCompilationUnit();
+		compile();
+		if (isSameUnit) {
+			visitAST(uris);
+		} else {
+			visitAST();
+		}
+		previousContext = contextURI;
 	}
 
 	private void compile() {
