@@ -34,6 +34,10 @@ public class Positions {
 		return p1.getCharacter() - p2.getCharacter();
 	};
 
+	public static boolean valid(Position p) {
+		return p.getLine() >= 0 || p.getCharacter() >= 0;
+	}
+
 	public static int getOffset(String string, Position position) {
 		int line = position.getLine();
 		int character = position.getCharacter();
