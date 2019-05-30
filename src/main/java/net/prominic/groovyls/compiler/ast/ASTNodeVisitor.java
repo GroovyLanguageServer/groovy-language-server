@@ -157,10 +157,11 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public List<ASTNode> getNodes(URI uri) {
-		if (!nodesByURI.containsKey(uri)) {
+		List<ASTNode> nodes = nodesByURI.get(uri);
+		if (nodes == null) {
 			return Collections.emptyList();
 		}
-		return nodesByURI.get(uri);
+		return nodes;
 	}
 
 	public ASTNode getNodeAtLineAndColumn(URI uri, int line, int column) {
@@ -171,6 +172,11 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 			return null;
 		}
 		List<ASTNode> foundNodes = nodes.stream().filter(node -> {
+			if (node.getLineNumber() == -1) {
+				//can't be the offset node if it has no position
+				//also, do this first because it's the fastest comparison
+				return false;
+			}
 			ASTNodeLookupData lookupData = lookup.get(node);
 			if (lookupData == null) {
 				return false;
@@ -279,6 +285,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		unit.getAST().getClasses().forEach(classInUnit -> {
 			visitClass(classInUnit);
 		});
+		sourceUnit = null;
 	}
 
 	// GroovyClassVisitor
