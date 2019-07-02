@@ -76,13 +76,13 @@ public class HoverProvider {
 	private String getContent(ASTNode hoverNode) {
 		if (hoverNode instanceof ClassNode) {
 			ClassNode classNode = (ClassNode) hoverNode;
-			return GroovyNodeToStringUtils.classToString(classNode);
+			return GroovyNodeToStringUtils.classToString(classNode, ast);
 		} else if (hoverNode instanceof MethodNode) {
 			MethodNode methodNode = (MethodNode) hoverNode;
-			return GroovyNodeToStringUtils.methodToString(methodNode);
+			return GroovyNodeToStringUtils.methodToString(methodNode, ast);
 		} else if (hoverNode instanceof Variable) {
 			Variable varNode = (Variable) hoverNode;
-			return GroovyNodeToStringUtils.variableToString(varNode);
+			return GroovyNodeToStringUtils.variableToString(varNode, ast);
 		} else {
 			System.err.println("*** hover not available for node: " + hoverNode);
 		}

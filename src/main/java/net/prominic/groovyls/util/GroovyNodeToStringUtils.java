@@ -25,11 +25,15 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.Expression;
+
+import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
+import net.prominic.groovyls.compiler.util.GroovyASTUtils;
 
 public class GroovyNodeToStringUtils {
 	private static final String JAVA_OBJECT = "java.lang.Object";
 
-	public static String classToString(ClassNode classNode) {
+	public static String classToString(ClassNode classNode, ASTNodeVisitor ast) {
 		StringBuilder builder = new StringBuilder();
 		if (!classNode.isSyntheticPublic()) {
 			builder.append("public ");
@@ -54,18 +58,18 @@ public class GroovyNodeToStringUtils {
 		return builder.toString();
 	}
 
-	public static String constructorToString(ConstructorNode constructorNode) {
+	public static String constructorToString(ConstructorNode constructorNode, ASTNodeVisitor ast) {
 		StringBuilder builder = new StringBuilder();
 		builder.append(constructorNode.getDeclaringClass().getName());
 		builder.append("(");
-		builder.append(parametersToString(constructorNode.getParameters()));
+		builder.append(parametersToString(constructorNode.getParameters(), ast));
 		builder.append(")");
 		return builder.toString();
 	}
 
-	public static String methodToString(MethodNode methodNode) {
+	public static String methodToString(MethodNode methodNode, ASTNodeVisitor ast) {
 		if (methodNode instanceof ConstructorNode) {
-			return constructorToString((ConstructorNode) methodNode);
+			return constructorToString((ConstructorNode) methodNode, ast);
 		}
 		StringBuilder builder = new StringBuilder();
 		if (methodNode.isPublic()) {
@@ -90,24 +94,24 @@ public class GroovyNodeToStringUtils {
 		builder.append(" ");
 		builder.append(methodNode.getName());
 		builder.append("(");
-		builder.append(parametersToString(methodNode.getParameters()));
+		builder.append(parametersToString(methodNode.getParameters(), ast));
 		builder.append(")");
 		return builder.toString();
 	}
 
-	public static String parametersToString(Parameter[] params) {
+	public static String parametersToString(Parameter[] params, ASTNodeVisitor ast) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < params.length; i++) {
 			if (i > 0) {
 				builder.append(", ");
 			}
 			Parameter paramNode = params[i];
-			builder.append(variableToString(paramNode));
+			builder.append(variableToString(paramNode, ast));
 		}
 		return builder.toString();
 	}
 
-	public static String variableToString(Variable variable) {
+	public static String variableToString(Variable variable, ASTNodeVisitor ast) {
 		StringBuilder builder = new StringBuilder();
 		if (variable instanceof FieldNode) {
 			FieldNode fieldNode = (FieldNode) variable;
@@ -129,7 +133,12 @@ public class GroovyNodeToStringUtils {
 				builder.append("static ");
 			}
 		}
-		ClassNode varType = variable.getType();
+		ClassNode varType = null;
+		if (variable instanceof Expression) {
+			varType = GroovyASTUtils.getTypeOfExpression((Expression) variable, ast);
+		} else {
+			varType = variable.getType();
+		}
 		builder.append(varType.getNameWithoutPackage());
 		builder.append(" ");
 		builder.append(variable.getName());

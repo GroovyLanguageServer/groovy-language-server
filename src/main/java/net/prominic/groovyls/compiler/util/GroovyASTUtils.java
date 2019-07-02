@@ -213,9 +213,21 @@ public class GroovyASTUtils {
                 if (enclosingClass != null) {
                     return enclosingClass;
                 }
-            } else if (var.getOriginType() != null) {
+            } else if (var.isDynamicTyped()) {
+                ASTNode defNode = GroovyASTUtils.getDefinition(var, false, astVisitor);
+                if (defNode instanceof VariableExpression) {
+                    ASTNode declNode = astVisitor.getParent(defNode);
+                    if (declNode instanceof DeclarationExpression) {
+                        DeclarationExpression decl = (DeclarationExpression) declNode;
+                        return getTypeOfExpression(decl.getRightExpression(), astVisitor);
+                    }
+                }
+            }
+            if (var.getOriginType() != null) {
                 return var.getOriginType();
             }
+        } else if (node != null) {
+            return node.getType();
         }
         return null;
     }

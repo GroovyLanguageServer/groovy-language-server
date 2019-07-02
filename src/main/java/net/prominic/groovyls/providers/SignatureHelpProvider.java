@@ -91,11 +91,11 @@ public class SignatureHelpProvider {
 				Parameter methodParam = methodParams[i];
 
 				ParameterInformation paramInfo = new ParameterInformation();
-				paramInfo.setLabel(GroovyNodeToStringUtils.variableToString(methodParam));
+				paramInfo.setLabel(GroovyNodeToStringUtils.variableToString(methodParam, ast));
 				parameters.add(paramInfo);
 			}
 			SignatureInformation sigInfo = new SignatureInformation();
-			sigInfo.setLabel(GroovyNodeToStringUtils.methodToString(method));
+			sigInfo.setLabel(GroovyNodeToStringUtils.methodToString(method, ast));
 			sigInfo.setParameters(parameters);
 			sigInfos.add(sigInfo);
 		}
