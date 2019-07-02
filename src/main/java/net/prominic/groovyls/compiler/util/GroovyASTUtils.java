@@ -212,10 +212,22 @@ public class GroovyASTUtils {
             return expression.getType();
         } else if (node instanceof ConstructorCallExpression) {
             ConstructorCallExpression expression = (ConstructorCallExpression) node;
-            // Local function, no class used (or technically this used).
             return expression.getType();
+        } else if (node instanceof MethodCallExpression) {
+            MethodCallExpression expression = (MethodCallExpression) node;
+            MethodNode methodNode = GroovyASTUtils.getMethodFromCallExpression(expression, astVisitor);
+            if (methodNode != null) {
+                return methodNode.getReturnType();
+            }
+            return node.getType();
+        } else if (node instanceof PropertyExpression) {
+            PropertyExpression expression = (PropertyExpression) node;
+            PropertyNode propNode = GroovyASTUtils.getPropertyFromExpression(expression, astVisitor);
+            if (propNode != null) {
+                return propNode.getType();
+            }
+            return node.getType();
         } else if (node instanceof VariableExpression) {
-            // function called on instance of some class
             VariableExpression var = (VariableExpression) node;
             if (var.getName().equals("this")) {
                 ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
