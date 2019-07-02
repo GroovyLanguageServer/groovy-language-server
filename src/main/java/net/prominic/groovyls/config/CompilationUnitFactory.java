@@ -25,6 +25,9 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
@@ -36,21 +39,47 @@ import net.prominic.groovyls.util.FileContentsTracker;
 public class CompilationUnitFactory implements ICompilationUnitFactory {
 	private static final String FILE_EXTENSION_GROOVY = ".groovy";
 
+	private GroovyLSCompilationUnit compilationUnit;
+
 	public CompilationUnitFactory() {
 	}
 
 	public void invalidateCompilationUnit() {
-		// nothing to do at this time
+		compilationUnit = null;
 	}
 
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
 		CompilerConfiguration config = new CompilerConfiguration();
 
-		GroovyLSCompilationUnit compilationUnit = new GroovyLSCompilationUnit(config);
-		if (workspaceRoot != null) {
-			addDirectoryToCompilationUnit(workspaceRoot, compilationUnit, fileContentsTracker);
+		Set<URI> changedUris = fileContentsTracker.getChangedURIs();
+		if (compilationUnit == null) {
+			compilationUnit = new GroovyLSCompilationUnit(config);
+			//we don't care about changed URIs if there's no compilation unit yet
+			changedUris = null;
 		} else {
+			final Set<URI> urisToRemove = changedUris;
+			List<SourceUnit> sourcesToRemove = new ArrayList<>();
+			compilationUnit.iterator().forEachRemaining(sourceUnit -> {
+				URI uri = sourceUnit.getSource().getURI();
+				if (urisToRemove.contains(uri)) {
+					sourcesToRemove.add(sourceUnit);
+				}
+			});
+			//if an URI has changed, we remove it from the compilation unit so
+			//that a new version can be built from the updated source file
+			compilationUnit.removeSources(sourcesToRemove);
+		}
+
+		if (workspaceRoot != null) {
+			addDirectoryToCompilationUnit(workspaceRoot, compilationUnit, fileContentsTracker, changedUris);
+		} else {
+			final Set<URI> urisToAdd = changedUris;
 			fileContentsTracker.getOpenURIs().forEach(uri -> {
+				//if we're only tracking changes, skip all files that haven't
+				//actually changed
+				if (urisToAdd != null && !urisToAdd.contains(uri)) {
+					return;
+				}
 				String contents = fileContentsTracker.getContents(uri);
 				addOpenFileToCompilationUnit(uri, contents, compilationUnit);
 			});
@@ -60,7 +89,7 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	}
 
 	protected void addDirectoryToCompilationUnit(Path dirPath, GroovyLSCompilationUnit compilationUnit,
-			FileContentsTracker fileContentsTracker) {
+			FileContentsTracker fileContentsTracker, Set<URI> changedUris) {
 		try {
 			if (Files.exists(dirPath)) {
 				Files.walk(dirPath).forEach((filePath) -> {
@@ -71,7 +100,9 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 					if (!fileContentsTracker.isOpen(fileURI)) {
 						File file = filePath.toFile();
 						if (file.isFile()) {
-							compilationUnit.addSource(file);
+							if (changedUris == null || changedUris.contains(fileURI)) {
+								compilationUnit.addSource(file);
+							}
 						}
 					}
 				});
@@ -83,6 +114,9 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 		fileContentsTracker.getOpenURIs().forEach(uri -> {
 			Path openPath = Paths.get(uri);
 			if (!openPath.normalize().startsWith(dirPath.normalize())) {
+				return;
+			}
+			if (changedUris != null && !changedUris.contains(uri)) {
 				return;
 			}
 			String contents = fileContentsTracker.getContents(uri);
