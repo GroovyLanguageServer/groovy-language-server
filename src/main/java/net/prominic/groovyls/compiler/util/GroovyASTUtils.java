@@ -167,7 +167,10 @@ public class GroovyASTUtils {
     public static List<FieldNode> getFieldsForLeftSideOfPropertyExpression(Expression node, ASTNodeVisitor astVisitor) {
         ClassNode classNode = getTypeOfExpression(node, astVisitor);
         if (classNode != null) {
-            return classNode.getFields();
+            boolean statics = node instanceof ClassExpression;
+            return classNode.getFields().stream().filter(fieldNode -> {
+                return statics ? fieldNode.isStatic() : !fieldNode.isStatic();
+            }).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
@@ -176,7 +179,10 @@ public class GroovyASTUtils {
             ASTNodeVisitor astVisitor) {
         ClassNode classNode = getTypeOfExpression(node, astVisitor);
         if (classNode != null) {
-            return classNode.getProperties();
+            boolean statics = node instanceof ClassExpression;
+            return classNode.getProperties().stream().filter(propNode -> {
+                return statics ? propNode.isStatic() : !propNode.isStatic();
+            }).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
@@ -185,7 +191,10 @@ public class GroovyASTUtils {
             ASTNodeVisitor astVisitor) {
         ClassNode classNode = getTypeOfExpression(node, astVisitor);
         if (classNode != null) {
-            return classNode.getMethods();
+            boolean statics = node instanceof ClassExpression;
+            return classNode.getMethods().stream().filter(methodNode -> {
+                return statics ? methodNode.isStatic() : !methodNode.isStatic();
+            }).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
