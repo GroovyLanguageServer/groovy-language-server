@@ -19,13 +19,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.util;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.expr.Expression;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
@@ -134,8 +134,8 @@ public class GroovyNodeToStringUtils {
 			}
 		}
 		ClassNode varType = null;
-		if (variable instanceof Expression) {
-			varType = GroovyASTUtils.getTypeOfExpression((Expression) variable, ast);
+		if (variable instanceof ASTNode) {
+			varType = GroovyASTUtils.getTypeOfNode((ASTNode) variable, ast);
 		} else {
 			varType = variable.getType();
 		}
