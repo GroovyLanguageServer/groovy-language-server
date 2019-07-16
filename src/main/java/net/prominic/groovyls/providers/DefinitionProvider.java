@@ -26,8 +26,10 @@ import java.util.concurrent.CompletableFuture;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
@@ -40,19 +42,19 @@ public class DefinitionProvider {
 		this.ast = ast;
 	}
 
-	public CompletableFuture<List<? extends Location>> provideDefinition(TextDocumentIdentifier textDocument,
+	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> provideDefinition(TextDocumentIdentifier textDocument,
 			Position position) {
 		if (ast == null) {
 			//this shouldn't happen, but let's avoid an exception if something
 			//goes terribly wrong.
-			return CompletableFuture.completedFuture(Collections.emptyList());
+			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 
 		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, true, ast);
 		if (definitionNode == null || definitionNode.getLineNumber() == -1 || definitionNode.getColumnNumber() == -1) {
-			return CompletableFuture.completedFuture(Collections.emptyList());
+			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
 
 		URI definitionURI = ast.getURI(definitionNode);
@@ -62,6 +64,6 @@ public class DefinitionProvider {
 
 		Location location = new Location(definitionURI.toString(),
 				GroovyLanguageServerUtils.astNodeToRange(definitionNode));
-		return CompletableFuture.completedFuture(Collections.singletonList(location));
+		return CompletableFuture.completedFuture(Either.forLeft(Collections.singletonList(location)));
 	}
 }
