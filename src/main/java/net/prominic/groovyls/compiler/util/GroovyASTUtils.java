@@ -314,6 +314,9 @@ public class GroovyASTUtils {
             argsCount = argIndex + 1;
         }
         int minCount = Math.min(paramCount, argsCount);
+        if (minCount == 0 && paramCount == argsCount) {
+            score++;
+        }
         for (int i = 0; i < minCount; i++) {
             ClassNode argType = (i < expressionsCount) ? arguments.getExpression(i).getType() : null;
             ClassNode paramType = (i < paramCount) ? parameters[i].getType() : null;
