@@ -28,4 +28,4 @@ Learn how to configure [Sublime Text](https://www.sublimetext.com/) to add code 
    }
    ```
 
-   Be sure to change to _path/to/groovy-language-server-all.jar_ to the real location of this _.jar_ file on your computer. It **must** be an absolute path.
+   Be sure to change to _/absolute/path/to/groovy-language-server-all.jar_ to the real location of this _.jar_ file on your computer. It **must** be an absolute path.
