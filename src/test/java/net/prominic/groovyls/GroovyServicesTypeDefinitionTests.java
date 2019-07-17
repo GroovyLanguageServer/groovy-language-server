@@ -115,7 +115,7 @@ class GroovyServicesTypeDefinitionTests {
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 22);
 		List<? extends Location> locations = services
-				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get();
+				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get().getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -141,7 +141,7 @@ class GroovyServicesTypeDefinitionTests {
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
 		List<? extends Location> locations = services
-				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get();
+				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get().getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -169,7 +169,7 @@ class GroovyServicesTypeDefinitionTests {
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(5, 6);
 		List<? extends Location> locations = services
-				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get();
+				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get().getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -194,7 +194,7 @@ class GroovyServicesTypeDefinitionTests {
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(1, 20);
 		List<? extends Location> locations = services
-				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get();
+				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get().getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -220,7 +220,7 @@ class GroovyServicesTypeDefinitionTests {
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
 		List<? extends Location> locations = services
-				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get();
+				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get().getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -246,7 +246,7 @@ class GroovyServicesTypeDefinitionTests {
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(1, 27);
 		List<? extends Location> locations = services
-				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get();
+				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get().getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -273,7 +273,7 @@ class GroovyServicesTypeDefinitionTests {
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(4, 6);
 		List<? extends Location> locations = services
-				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get();
+				.typeDefinition(new TextDocumentPositionParams(textDocument, position)).get().getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
