@@ -10,10 +10,14 @@ task build(type: Exec) {
   outputs.dir("$buildDir")
 
   def webpack = "$projectDir/node_modules/.bin/webpack"
+  def vsce = "$projectDir/node_modules/.bin/vsce"
   if (System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows")) {
-    webpack += ".cmd";
+    webpack += ".cmd"
+    vsce += ".cmd"
   }
   commandLine "$webpack", "--mode", "production"
+  workingDir "$buildDir"
+  commandLine "$vsce", "package"
 }
 
 task copyJar(type: Copy) {

@@ -2,8 +2,8 @@
   "name": "groovy",
   "displayName": "Groovy",
   "description": "Language support for Groovy",
-  "version": "0.0.0-SNAPSHOT",
-  "publisher": "prominic",
+  "version": "0.0.0",
+  "publisher": "publisher",
   "homepage": "https://github.com/prominic/groovy-language-server",
   "repository": {
     "type": "git",
@@ -22,7 +22,6 @@
     "Grails"
   ],
   "main": "extension",
-  "icon": "groovy.png",
   "engines": {
     "vscode": "^1.36.0"
   },
@@ -31,6 +30,7 @@
     "@types/vscode": "^1.36.0",
     "ts-loader": "^6.0.4",
     "typescript": "^3.5.3",
+    "vsce": "^1.66.0",
     "vscode-jsonrpc": "^4.0.0",
     "vscode-languageclient": "^5.2.1",
     "webpack": "^4.36.1",
