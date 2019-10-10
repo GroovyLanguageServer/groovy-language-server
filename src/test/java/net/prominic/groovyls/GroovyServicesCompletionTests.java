@@ -404,4 +404,26 @@ class GroovyServicesCompletionTests {
 		}).collect(Collectors.toList());
 		Assertions.assertEquals(1, filteredItems.size());
 	}
+
+	@Test
+	void testDynamicTyping() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("def env = System.getEnv();\n");
+		contents.append("env.");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(1, 4);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertTrue(items.size() > 0);
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("containsKey") && item.getKind().equals(CompletionItemKind.Method);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
 }
