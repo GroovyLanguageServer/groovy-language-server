@@ -18,8 +18,11 @@
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
 import findJava from "./utils/findJava";
+import getAdditionalClasspathFolder from "./utils/extClassPath";
 import * as path from "path";
 import * as vscode from "vscode";
+
+
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -38,7 +41,8 @@ let languageClient: LanguageClient;
 let javaPath: string;
 
 function onDidChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
-  if (event.affectsConfiguration("groovy.java.home")) {
+  if (event.affectsConfiguration("groovy.java.home") ||
+  	  event.affectsConfiguration("groovy.additional.libraries")) {
     //we're going to try to kill the language server and then restart
     //it with the new settings
     restartLanguageServer();
@@ -71,6 +75,7 @@ function restartLanguageServer() {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  console.log("Activating Groovy LSP");
   extensionContext = context;
   javaPath = findJava();
   vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration);
@@ -84,12 +89,14 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+  console.log("Deactivating Groovy LSP");
   extensionContext = null;
 }
 
 function startLanguageServer() {
   if (!extensionContext) {
     //something very bad happened!
+    console.log("something very bad happened!");
     return;
   }
   /*if (vscode.workspace.workspaceFolders === undefined) {
@@ -115,6 +122,7 @@ function startLanguageServer() {
   }*/
   if (!javaPath) {
     vscode.window.showErrorMessage(MISSING_JAVA_ERROR);
+    console.log(MISSING_JAVA_ERROR);
     return;
   }
 
@@ -122,9 +130,13 @@ function startLanguageServer() {
     { location: vscode.ProgressLocation.Window },
     progress => {
       return new Promise((resolve, reject) => {
-        progress.report({ message: INITIALIZING_MESSAGE });
+		progress.report({ message: INITIALIZING_MESSAGE });
+		let extClassPath = getAdditionalClasspathFolder();
         let clientOptions: LanguageClientOptions = {
-          documentSelector: [{ scheme: "file", language: "groovy" }],
+		  documentSelector: [{ scheme: "file", language: "groovy" }],
+		  initializationOptions: [{
+			"ADDITIONAL_CLASSPATH_FOLDER": `${extClassPath}`
+		  }],
           synchronize: {
             configurationSection: "groovy"
           },
@@ -141,30 +153,36 @@ function startLanguageServer() {
             //this is just the default behavior, but we need to define both
             protocol2Code: value => vscode.Uri.parse(value)
           }
-        };
+		};
         let args = [
           "-jar",
           path.resolve(extensionContext.extensionPath, "bin", "groovy-language-server-all.jar")
         ];
         //uncomment to allow a debugger to attach to the language server
-        //args.unshift("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005,quiet=y");
+        args.unshift("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005,quiet=y");
         let executable: Executable = {
           command: javaPath,
           args: args
         };
+        console.log("Groovy LSP Executable: " + javaPath);
+        console.log("Groovy LSP args: " + args);
+
         languageClient = new LanguageClient(
           "groovy",
           "Groovy Language Server",
           executable,
           clientOptions
         );
-        languageClient.onReady().then(resolve, reason => {
-          resolve();
-          vscode.window.showErrorMessage(STARTUP_ERROR);
-        });
+        languageClient.onReady().then(
+          ()=> {},
+          error => {
+            resolve();
+            vscode.window.showErrorMessage(STARTUP_ERROR);
+          });
         let disposable = languageClient.start();
         extensionContext.subscriptions.push(disposable);
       });
     }
   );
+  console.log("Started Groovy LSP");
 }

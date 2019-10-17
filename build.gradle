@@ -30,6 +30,7 @@ dependencies {
   compile "org.eclipse.lsp4j:org.eclipse.lsp4j:0.7.2"
   compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.7.2"
   compile "org.codehaus.groovy:groovy-all:2.5.7"
+  compile "com.google.code.gson:gson:2.+"
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.5.0"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.5.0"
 }
@@ -40,8 +41,8 @@ dependencies {
 task deployMoonshine(type: Copy) {
     from "build/libs/groovy-language-server-all.jar"
     into "../Moonshine-IDE/ide/MoonshineSharedCore/src/elements/groovy-language-server/"
-}   
+}
 task deployMoonshineTest(type: Copy) {
     from "build/libs/groovy-language-server-all.jar"
     into "../Moonshine-IDE/ide/MoonshineDESKTOPevolved/bin-debug/elements/groovy-language-server/"
-}   
+}

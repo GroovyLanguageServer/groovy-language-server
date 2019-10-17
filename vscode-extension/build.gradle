@@ -33,4 +33,3 @@ task copyLocal(type: Copy) {
 tasks.build.dependsOn tasks.npmInstall
 tasks.build.dependsOn tasks.copyJar
 tasks.build.dependsOn tasks.copyLocal
-

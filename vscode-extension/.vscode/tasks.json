@@ -4,14 +4,51 @@
 		{
 			"label": "build-groovy-extension",
 			"command": "./gradlew",
+			
 			"windows": {
 				"command": "./gradlew.bat"
+			},
+			"args": ["build"],
+			"dependsOn": ["clean", "build_lsp", "run_tsc"],
+			"dependsOrder": "sequence",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "clean",
+			"command": "rm",
+			"args": ["-rf", "./build"],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "build_lsp",
+			"command": "../gradlew",
+			"windows": {
+				"command": "../gradlew.bat"
 			},
 			"args": ["build"],
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"label": "run_tsc",
+			"command": "tsc",
+			"windows": {
+				"command": "tsc"
+			},
+			"args": ["-p", "./"],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		}
+
 	]
 }

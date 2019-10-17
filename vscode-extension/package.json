@@ -21,9 +21,13 @@
     "Groovy",
     "Grails"
   ],
-  "main": "extension",
+  "main": "./extension.js",
   "engines": {
     "vscode": "^1.36.0"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
     "@types/node": "^10.14.12",
@@ -70,6 +74,11 @@
           ],
           "default": null,
           "description": "Specifies the folder path to the JDK. Use this setting if the extension cannot find Java automatically."
+        },
+        "groovy.additional.libraries": {
+          "type": "string",
+          "default": null,
+          "description": "Specifies paths to additional libraries used to resolve classes. (multiple paths separated by semicolon)"
         }
       }
     }
