@@ -70,6 +70,14 @@
           ],
           "default": null,
           "description": "Specifies the folder path to the JDK. Use this setting if the extension cannot find Java automatically."
+        },
+        "groovy.classpath": {
+          "type": "array",
+          "default": null,
+          "description": "Specifies additional entries to add to the classpath. May contain both folders and individual .jar files.",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
