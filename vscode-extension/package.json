@@ -23,18 +23,18 @@
   ],
   "main": "extension",
   "engines": {
-    "vscode": "^1.36.0"
+    "vscode": "^1.39.0"
   },
   "devDependencies": {
-    "@types/node": "^10.14.12",
-    "@types/vscode": "^1.36.0",
-    "ts-loader": "^6.0.4",
-    "typescript": "^3.5.3",
-    "vsce": "^1.66.0",
+    "@types/node": "^10.14.22",
+    "@types/vscode": "^1.39.0",
+    "ts-loader": "^6.2.0",
+    "typescript": "^3.6.4",
+    "vsce": "^1.68.0",
     "vscode-jsonrpc": "^4.0.0",
     "vscode-languageclient": "^5.2.1",
-    "webpack": "^4.36.1",
-    "webpack-cli": "^3.3.6"
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.9"
   },
   "activationEvents": [
     "onLanguage:groovy",
