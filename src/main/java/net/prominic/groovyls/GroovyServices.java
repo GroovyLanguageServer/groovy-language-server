@@ -35,6 +35,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.control.ErrorCollector;
@@ -160,7 +163,35 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	}
 
 	@Override
-	public void didChangeConfiguration(DidChangeConfigurationParams didChangeConfigurationParams) {
+	public void didChangeConfiguration(DidChangeConfigurationParams params) {
+		if (!(params.getSettings() instanceof JsonObject)) {
+			return;
+		}
+		JsonObject settings = (JsonObject) params.getSettings();
+		this.updateClasspath(settings);
+	}
+
+	private void updateClasspath(JsonObject settings) {
+		List<String> classpathList = new ArrayList<>();
+
+		if (settings.has("groovy") && settings.get("groovy").isJsonObject()) {
+			JsonObject groovy = settings.get("groovy").getAsJsonObject();
+			if (groovy.has("classpath") && groovy.get("classpath").isJsonArray()) {
+				JsonArray classpath = groovy.get("classpath").getAsJsonArray();
+				classpath.forEach(element -> {
+					classpathList.add(element.getAsString());
+				});
+			}
+		}
+
+		if (!classpathList.equals(compilationUnitFactory.getAdditionalClasspathList())) {
+			compilationUnitFactory.setAdditionalClasspathList(classpathList);
+
+			createOrUpdateCompilationUnit();
+			compile();
+			visitAST();
+			previousContext = null;
+		}
 	}
 
 	// --- REQUESTS
@@ -223,7 +254,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	}
 
 	@Override
-	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(TextDocumentPositionParams params) {
+	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
+			TextDocumentPositionParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		recompileIfContextChanged(uri);
 
@@ -277,7 +309,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	}
 
 	@Override
-	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> typeDefinition(TextDocumentPositionParams params) {
+	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> typeDefinition(
+			TextDocumentPositionParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		recompileIfContextChanged(uri);
 

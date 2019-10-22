@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.control;
 
+import java.security.CodeSource;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -30,9 +31,16 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 
+import groovy.lang.GroovyClassLoader;
+
 public class GroovyLSCompilationUnit extends CompilationUnit {
+
 	public GroovyLSCompilationUnit(CompilerConfiguration config) {
-		super(config);
+		this(config, null, null);
+	}
+
+	public GroovyLSCompilationUnit(CompilerConfiguration config, CodeSource security, GroovyClassLoader loader) {
+		super(config, security, loader);
 		this.errorCollector = new LanguageServerErrorCollector(config);
 	}
 

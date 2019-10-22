@@ -20,6 +20,7 @@
 package net.prominic.groovyls.config;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
 import net.prominic.groovyls.util.FileContentsTracker;
@@ -30,6 +31,10 @@ public interface ICompilationUnitFactory {
 	 * the creation of a new one.
 	 */
 	public void invalidateCompilationUnit();
+
+	public List<String> getAdditionalClasspathList();
+
+	public void setAdditionalClasspathList(List<String> classpathList);
 
 	/**
 	 * Returns a compilation unit.

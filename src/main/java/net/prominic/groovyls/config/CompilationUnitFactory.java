@@ -32,6 +32,7 @@ import java.util.Set;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 
+import groovy.lang.GroovyClassLoader;
 import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
 import net.prominic.groovyls.compiler.control.io.StringReaderSourceWithURI;
 import net.prominic.groovyls.util.FileContentsTracker;
@@ -40,8 +41,18 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	private static final String FILE_EXTENSION_GROOVY = ".groovy";
 
 	private GroovyLSCompilationUnit compilationUnit;
+	private List<String> additionalClasspathList;
 
 	public CompilationUnitFactory() {
+	}
+
+	public List<String> getAdditionalClasspathList() {
+		return additionalClasspathList;
+	}
+
+	public void setAdditionalClasspathList(List<String> additionalClasspathList) {
+		this.additionalClasspathList = additionalClasspathList;
+		invalidateCompilationUnit();
 	}
 
 	public void invalidateCompilationUnit() {
@@ -49,14 +60,22 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	}
 
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = getConfiguration();
+
+		GroovyClassLoader classLoader = new GroovyClassLoader();
+		for (String value : config.getClasspath()) {
+			//add all classpath values to the class loader, or there will be
+			//compiler errors about missing classes that should be there
+			classLoader.addClasspath(value);
+		}
 
 		Set<URI> changedUris = fileContentsTracker.getChangedURIs();
 		if (compilationUnit == null) {
-			compilationUnit = new GroovyLSCompilationUnit(config);
+			compilationUnit = new GroovyLSCompilationUnit(config, null, classLoader);
 			//we don't care about changed URIs if there's no compilation unit yet
 			changedUris = null;
 		} else {
+			compilationUnit.setClassLoader(classLoader);
 			final Set<URI> urisToRemove = changedUris;
 			List<SourceUnit> sourcesToRemove = new ArrayList<>();
 			compilationUnit.iterator().forEachRemaining(sourceUnit -> {
@@ -86,6 +105,47 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 		}
 
 		return compilationUnit;
+	}
+
+	protected CompilerConfiguration getConfiguration() {
+		CompilerConfiguration config = new CompilerConfiguration();
+
+		List<String> classpathList = new ArrayList<>();
+		getClasspathList(classpathList);
+		config.setClasspathList(classpathList);
+
+		return config;
+	}
+
+	protected void getClasspathList(List<String> result) {
+		if (additionalClasspathList == null) {
+			return;
+		}
+
+		for (String entry : additionalClasspathList) {
+			boolean mustBeDirectory = false;
+			if (entry.endsWith("*")) {
+				entry = entry.substring(0, entry.length() - 1);
+				mustBeDirectory = true;
+			}
+
+			File file = new File(entry);
+			if (!file.exists()) {
+				continue;
+			}
+			if (file.isDirectory()) {
+				for (File child : file.listFiles()) {
+					if (!child.getName().endsWith(".jar") || !child.isFile()) {
+						continue;
+					}
+					result.add(child.getPath());
+				}
+			} else if (!mustBeDirectory && file.isFile()) {
+				if (file.getName().endsWith(".jar")) {
+					result.add(entry);
+				}
+			}
+		}
 	}
 
 	protected void addDirectoryToCompilationUnit(Path dirPath, GroovyLSCompilationUnit compilationUnit,
