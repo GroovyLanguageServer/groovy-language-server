@@ -31,6 +31,7 @@ dependencies {
   compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.8.1"
   compile "org.codehaus.groovy:groovy-all:2.5.8"
   compile "com.google.code.gson:gson:2.8.2"
+  compile "org.reflections:reflections:0.9.+"
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.5.2"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.5.2"
 }

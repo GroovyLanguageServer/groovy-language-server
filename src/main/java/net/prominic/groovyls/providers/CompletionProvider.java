@@ -1,20 +1,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2019 Prominic.NET, Inc.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0 
-// 
-// Unless required by applicable law or agreed to in writing, software 
-// distributed under the License is distributed on an "AS IS" BASIS, 
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and 
+// See the License for the specific language governing permissions and
 // limitations under the License
-// 
+//
 // Author: Prominic.NET, Inc.
-// No warranty of merchantability or fitness of any kind. 
+// No warranty of merchantability or fitness of any kind.
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.providers;
@@ -31,25 +31,34 @@ import java.util.stream.Collectors;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
+import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class CompletionProvider {
+	private CompilationUnit compilationUnit;
 	private ASTNodeVisitor ast;
 
 	public CompletionProvider(ASTNodeVisitor ast) {
@@ -82,10 +91,16 @@ public class CompletionProvider {
 			populateItemsFromMethodCallExpression((MethodCallExpression) parentNode, position, items);
 		} else if (offsetNode instanceof VariableExpression) {
 			populateItemsFromVariableExpression((VariableExpression) offsetNode, position, items);
-		}
+		} else if (offsetNode instanceof ImportNode) {
+            populateItemsFromImportExpression((ImportNode) offsetNode, position, items);
+        }
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
 	}
+
+	public void setCompilationUnit(CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
 
 	private void populateItemsFromPropertyExpression(PropertyExpression propExpr, Position position,
 			List<CompletionItem> items) {
@@ -99,6 +114,100 @@ public class CompletionProvider {
 		Range methodRange = GroovyLanguageServerUtils.astNodeToRange(methodCallExpr.getMethod());
 		String memberName = getMemberName(methodCallExpr.getMethodAsString(), methodRange, position);
 		populateItemsFromExpression(methodCallExpr.getObjectExpression(), memberName, items);
+	}
+
+	private void populateItemsFromImportExpression(ImportNode importNode, Position position,
+                                                   List<CompletionItem> items) {
+        String packageName = importNode.getType().getName();
+
+		if (packageName.equals("a")) {
+			packageName = null;
+		}
+
+        List<ClassLoader> classLoadersList = new ArrayList<>();
+        classLoadersList.add(ClasspathHelper.contextClassLoader());
+        classLoadersList.add(ClasspathHelper.staticClassLoader());
+        classLoadersList.add(this.compilationUnit.getClassLoader());
+
+		Reflections reflections = new Reflections(new ConfigurationBuilder()
+		.setScanners(new SubTypesScanner(false /* don't exclude Object.class */))
+		.setUrls(ClasspathHelper.forClassLoader(classLoadersList.toArray(new ClassLoader[0]))));
+
+		Set<String> allTypes = reflections.getAllTypes();
+
+		// if completion is invoked after a . char somehow the importnode has an alias "a" automatically attached to the package name
+		// we remove that ".a" from the package name so we have all completion options
+		if (packageName.endsWith(".a")) {
+			packageName = packageName.substring(0, packageName.length()-1);
+		}
+
+		List<CompletionItem> packages = getPackagesList(classLoadersList, packageName, position, allTypes);
+		List<CompletionItem> classes = getClassesList(classLoadersList, packageName, position, allTypes);
+
+		items.addAll(packages);
+		items.addAll(classes);
+	}
+
+	private List<CompletionItem> getPackagesList(List<ClassLoader> classLoadersList, final String packageName, Position position, Set<String> allTypes) {
+
+		List<String> packages = new ArrayList<>();
+		for (String t : allTypes) {
+			if (packageName == null || packageName.trim().length()<1 || t.toLowerCase().startsWith(packageName.toLowerCase())) {
+				int idx = t.lastIndexOf('.');
+				String pak = t;
+				if (Character.isUpperCase(t.charAt(idx+1))) {
+					pak = t.substring(0, idx);
+				}
+				if (!packages.contains(pak)) {
+					packages.add(pak);
+				}
+			}
+		}
+		List<CompletionItem> items = new ArrayList<>();
+		for (String p : packages) {
+			CompletionItem item = new CompletionItem();
+			String label = p;
+			String completion = String.format("%s.*;", label);
+			if (packageName != null && packageName.trim().length()>0 && !packageName.trim().equalsIgnoreCase("a")) {
+				completion = completion.substring(completion.indexOf(packageName) + packageName.length());
+			} else {
+				completion = "*;";
+			}
+			item.setDetail(label);
+			item.setLabel(label);
+			item.setInsertText(completion);
+			item.setTextEdit(new TextEdit(new Range(position, new Position(position.getLine(), position.getCharacter()+completion.length())), completion));
+			item.setKind(CompletionItemKind.Class);
+			item.setDocumentation(p);
+			item.setSortText(String.format("0_%s", label));
+			items.add(item);
+		}
+		return items;
+	}
+
+	private List<CompletionItem> getClassesList(List<ClassLoader> classLoadersList, final String packageName, Position position, Set<String> allTypes) {
+		List<String> types = new ArrayList<>();
+		for (String t : allTypes) {
+			String possibleClassName = t.lastIndexOf(".") != -1 ? t.substring(t.lastIndexOf(".") + 1) : t;
+			if (possibleClassName.toLowerCase().indexOf(packageName.toLowerCase()) != -1 && !types.contains(t)) {
+				types.add(t);
+			}
+		}
+		List<CompletionItem> items = new ArrayList<>();
+		for (String t : types) {
+			CompletionItem item = new CompletionItem();
+			String label = t.substring(t.lastIndexOf(".")+1);
+			String completion = String.format("%s;", t);
+			item.setDetail(t);
+			item.setLabel(label);
+			item.setInsertText(completion);
+			item.setKind(CompletionItemKind.Class);
+			item.setDocumentation(t);
+			item.setSortText(String.format("1_%s", label));
+			items.add(item);
+		}
+
+		return items;
 	}
 
 	private void populateItemsFromVariableExpression(VariableExpression varExpr, Position position,
