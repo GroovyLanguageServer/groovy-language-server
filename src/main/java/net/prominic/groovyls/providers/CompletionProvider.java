@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -218,21 +219,36 @@ public class CompletionProvider {
 			}
 			current = ast.getParent(current);
 		}
-		populateClasses(node, items);
+		populateClasses(node, namePrefix, existingNames, items);
 	}
 
-	private void populateClasses(ASTNode offsetNode, List<CompletionItem> items) {
+	private void populateClasses(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
+			List<CompletionItem> items) {
 		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ClassNode.class, ast);
 		String enclosingPackageName = enclosingClass.getPackageName();
 
 		Range addImportRange = GroovyASTUtils.findAddImportRange(offsetNode, ast);
 
-		List<CompletionItem> classItems = ast.getClassNodes().stream().map(classNode -> {
+		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(enclosingClass,
+				ModuleNode.class, ast);
+		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
+				.collect(Collectors.toList());
+
+		List<CompletionItem> classItems = ast.getClassNodes().stream().filter(classNode -> {
+			String classNameWithoutPackage = classNode.getNameWithoutPackage();
+			String className = classNode.getName();
+			if (classNameWithoutPackage.startsWith(namePrefix) && !existingNames.contains(className)) {
+				existingNames.add(className);
+				return true;
+			}
+			return false;
+		}).map(classNode -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classNode.getNameWithoutPackage());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
 			String packageName = classNode.getPackageName();
-			if (packageName != null && !packageName.equals(enclosingPackageName)) {
+			if (packageName != null && !packageName.equals(enclosingPackageName)
+					&& !importNames.contains(classNode.getName())) {
 				List<TextEdit> additionalTextEdits = new ArrayList<>();
 				TextEdit addImportEdit = new TextEdit();
 				StringBuilder addImportBuilder = new StringBuilder();
