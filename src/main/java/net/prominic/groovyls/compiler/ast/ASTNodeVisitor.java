@@ -283,10 +283,19 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	public void visitSourceUnit(SourceUnit unit) {
 		sourceUnit = unit;
-		unit.getAST().getClasses().forEach(classInUnit -> {
-			visitClass(classInUnit);
-		});
+		visitModule(unit.getAST());
 		sourceUnit = null;
+	}
+
+	public void visitModule(ModuleNode node) {
+		pushASTNode(node);
+		try {
+			node.getClasses().forEach(classInUnit -> {
+				visitClass(classInUnit);
+			});
+		} finally {
+			popASTNode();
+		}
 	}
 
 	// GroovyClassVisitor
