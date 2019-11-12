@@ -86,9 +86,9 @@ public class CompletionProvider {
 		} else if (offsetNode instanceof VariableExpression) {
 			populateItemsFromVariableExpression((VariableExpression) offsetNode, position, items);
 		} else if (offsetNode instanceof MethodNode) {
-			populateItemsFromMethodNode((MethodNode) offsetNode, position, items);
+			populateItemsFromScope(offsetNode, position, items);
 		} else if (offsetNode instanceof Statement) {
-			populateItemsFromStatement((Statement) offsetNode, position, items);
+			populateItemsFromScope(offsetNode, position, items);
 		}
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
@@ -113,19 +113,19 @@ public class CompletionProvider {
 		Range varRange = GroovyLanguageServerUtils.astNodeToRange(varExpr);
 		String memberName = getMemberName(varExpr.getName(), varRange, position);
 		ClassNode enclosingClass = GroovyASTUtils.getEnclosingClass(varExpr, ast);
+		Set<String> existingNames = new HashSet<>();
 		populateItemsFromPropertiesAndFields(enclosingClass.getProperties(), enclosingClass.getFields(), memberName,
-				items);
-		populateItemsFromMethods(enclosingClass.getMethods(), memberName, items);
+				existingNames, items);
+		populateItemsFromMethods(enclosingClass.getMethods(), memberName, existingNames, items);
 	}
 
 	private void populateItemsFromPropertiesAndFields(List<PropertyNode> properties, List<FieldNode> fields,
-			String memberNamePrefix, List<CompletionItem> items) {
-		Set<String> foundNames = new HashSet<>();
+			String memberNamePrefix, Set<String> existingNames, List<CompletionItem> items) {
 		List<CompletionItem> propItems = properties.stream().filter(property -> {
 			String name = property.getName();
 			//sometimes, a property and a field will have the same name
-			if (name.startsWith(memberNamePrefix) && !foundNames.contains(name)) {
-				foundNames.add(name);
+			if (name.startsWith(memberNamePrefix) && !existingNames.contains(name)) {
+				existingNames.add(name);
 				return true;
 			}
 			return false;
@@ -139,8 +139,8 @@ public class CompletionProvider {
 		List<CompletionItem> fieldItems = fields.stream().filter(field -> {
 			String name = field.getName();
 			//sometimes, a property and a field will have the same name
-			if (name.startsWith(memberNamePrefix) && !foundNames.contains(name)) {
-				foundNames.add(name);
+			if (name.startsWith(memberNamePrefix) && !existingNames.contains(name)) {
+				existingNames.add(name);
 				return true;
 			}
 			return false;
@@ -153,14 +153,13 @@ public class CompletionProvider {
 		items.addAll(fieldItems);
 	}
 
-	private void populateItemsFromMethods(List<MethodNode> methods, String memberNamePrefix,
+	private void populateItemsFromMethods(List<MethodNode> methods, String memberNamePrefix, Set<String> existingNames,
 			List<CompletionItem> items) {
-		Set<String> foundMethods = new HashSet<>();
 		List<CompletionItem> methodItems = methods.stream().filter(method -> {
 			String methodName = method.getName();
 			//overloads can cause duplicates
-			if (methodName.startsWith(memberNamePrefix) && !foundMethods.contains(methodName)) {
-				foundMethods.add(methodName);
+			if (methodName.startsWith(memberNamePrefix) && !existingNames.contains(methodName)) {
+				existingNames.add(methodName);
 				return true;
 			}
 			return false;
@@ -174,17 +173,28 @@ public class CompletionProvider {
 	}
 
 	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
+		Set<String> existingNames = new HashSet<>();
+
 		List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
 		List<FieldNode> fields = GroovyASTUtils.getFieldsForLeftSideOfPropertyExpression(leftSide, ast);
-		populateItemsFromPropertiesAndFields(properties, fields, memberNamePrefix, items);
+		populateItemsFromPropertiesAndFields(properties, fields, memberNamePrefix, existingNames, items);
 
 		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
-		populateItemsFromMethods(methods, memberNamePrefix, items);
+		populateItemsFromMethods(methods, memberNamePrefix, existingNames, items);
 	}
 
-	private void populateItemsFromVariableScope(VariableScope variableScope, Position position,
-			List<CompletionItem> items) {
-		List<CompletionItem> variableItems = variableScope.getDeclaredVariables().values().stream().map(variable -> {
+	private void populateItemsFromVariableScope(VariableScope variableScope, String memberNamePrefix,
+			Set<String> existingNames, List<CompletionItem> items) {
+		List<CompletionItem> variableItems = variableScope.getDeclaredVariables().values().stream().filter(variable -> {
+
+			String variableName = variable.getName();
+			//overloads can cause duplicates
+			if (variableName.startsWith(memberNamePrefix) && !existingNames.contains(variableName)) {
+				existingNames.add(variableName);
+				return true;
+			}
+			return false;
+		}).map(variable -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(variable.getName());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
@@ -193,24 +203,23 @@ public class CompletionProvider {
 		items.addAll(variableItems);
 	}
 
-	private void populateItemsFromBlockStatement(BlockStatement block, Position position, List<CompletionItem> items) {
-		populateItemsFromVariableScope(block.getVariableScope(), position, items);
-	}
-
-	private void populateItemsFromMethodNode(MethodNode method, Position position, List<CompletionItem> items) {
-		populateItemsFromVariableScope(method.getVariableScope(), position, items);
-	}
-
-	private void populateItemsFromStatement(Statement statement, Position position, List<CompletionItem> items) {
-
-		ASTNode current = statement;
+	private void populateItemsFromScope(ASTNode node, Position position, List<CompletionItem> items) {
+		Set<String> existingNames = new HashSet<>();
+		ASTNode current = node;
 		while (current != null) {
+			if (current instanceof ClassNode) {
+				ClassNode classNode = (ClassNode) current;
+				populateItemsFromPropertiesAndFields(classNode.getProperties(), classNode.getFields(), "",
+						existingNames, items);
+				populateItemsFromMethods(classNode.getMethods(), "", existingNames, items);
+			}
 			if (current instanceof MethodNode) {
-				populateItemsFromMethodNode((MethodNode) current, position, items);
-				break;
+				MethodNode methodNode = (MethodNode) current;
+				populateItemsFromVariableScope(methodNode.getVariableScope(), "", existingNames, items);
 			}
 			if (current instanceof BlockStatement) {
-				populateItemsFromBlockStatement((BlockStatement) current, position, items);
+				BlockStatement block = (BlockStatement) current;
+				populateItemsFromVariableScope(block.getVariableScope(), "", existingNames, items);
 			}
 			current = ast.getParent(current);
 		}
