@@ -86,9 +86,9 @@ public class CompletionProvider {
 		} else if (offsetNode instanceof VariableExpression) {
 			populateItemsFromVariableExpression((VariableExpression) offsetNode, position, items);
 		} else if (offsetNode instanceof MethodNode) {
-			populateItemsFromScope(offsetNode, position, items);
+			populateItemsFromScope(offsetNode, "", items);
 		} else if (offsetNode instanceof Statement) {
-			populateItemsFromScope(offsetNode, position, items);
+			populateItemsFromScope(offsetNode, "", items);
 		}
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
@@ -112,11 +112,7 @@ public class CompletionProvider {
 			List<CompletionItem> items) {
 		Range varRange = GroovyLanguageServerUtils.astNodeToRange(varExpr);
 		String memberName = getMemberName(varExpr.getName(), varRange, position);
-		ClassNode enclosingClass = GroovyASTUtils.getEnclosingClass(varExpr, ast);
-		Set<String> existingNames = new HashSet<>();
-		populateItemsFromPropertiesAndFields(enclosingClass.getProperties(), enclosingClass.getFields(), memberName,
-				existingNames, items);
-		populateItemsFromMethods(enclosingClass.getMethods(), memberName, existingNames, items);
+		populateItemsFromScope(varExpr, memberName, items);
 	}
 
 	private void populateItemsFromPropertiesAndFields(List<PropertyNode> properties, List<FieldNode> fields,
@@ -203,23 +199,23 @@ public class CompletionProvider {
 		items.addAll(variableItems);
 	}
 
-	private void populateItemsFromScope(ASTNode node, Position position, List<CompletionItem> items) {
+	private void populateItemsFromScope(ASTNode node, String namePrefix, List<CompletionItem> items) {
 		Set<String> existingNames = new HashSet<>();
 		ASTNode current = node;
 		while (current != null) {
 			if (current instanceof ClassNode) {
 				ClassNode classNode = (ClassNode) current;
-				populateItemsFromPropertiesAndFields(classNode.getProperties(), classNode.getFields(), "",
+				populateItemsFromPropertiesAndFields(classNode.getProperties(), classNode.getFields(), namePrefix,
 						existingNames, items);
-				populateItemsFromMethods(classNode.getMethods(), "", existingNames, items);
+				populateItemsFromMethods(classNode.getMethods(), namePrefix, existingNames, items);
 			}
 			if (current instanceof MethodNode) {
 				MethodNode methodNode = (MethodNode) current;
-				populateItemsFromVariableScope(methodNode.getVariableScope(), "", existingNames, items);
+				populateItemsFromVariableScope(methodNode.getVariableScope(), namePrefix, existingNames, items);
 			}
 			if (current instanceof BlockStatement) {
 				BlockStatement block = (BlockStatement) current;
-				populateItemsFromVariableScope(block.getVariableScope(), "", existingNames, items);
+				populateItemsFromVariableScope(block.getVariableScope(), namePrefix, existingNames, items);
 			}
 			current = ast.getParent(current);
 		}
