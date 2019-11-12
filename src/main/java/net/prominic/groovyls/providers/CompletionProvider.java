@@ -37,6 +37,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
@@ -82,6 +83,10 @@ public class CompletionProvider {
 			populateItemsFromMethodCallExpression((MethodCallExpression) parentNode, position, items);
 		} else if (offsetNode instanceof VariableExpression) {
 			populateItemsFromVariableExpression((VariableExpression) offsetNode, position, items);
+		} else if (offsetNode instanceof MethodNode) {
+			populateItemsFromMethodNode((MethodNode) offsetNode, position, items);
+		} else if (offsetNode instanceof Statement) {
+			populateItemsFromStatement((Statement) offsetNode, position, items);
 		}
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
@@ -173,6 +178,33 @@ public class CompletionProvider {
 
 		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
 		populateItemsFromMethods(methods, memberNamePrefix, items);
+	}
+
+	private void populateItemsFromMethodNode(MethodNode method, Position position, List<CompletionItem> items) {
+		List<CompletionItem> variableItems = method.getVariableScope().getDeclaredVariables().values().stream()
+				.map(variable -> {
+					CompletionItem item = new CompletionItem();
+					item.setLabel(variable.getName());
+					item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
+					return item;
+				}).collect(Collectors.toList());
+		items.addAll(variableItems);
+	}
+
+	private void populateItemsFromStatement(Statement statement, Position position, List<CompletionItem> items) {
+
+		MethodNode methodNode = null;
+		ASTNode current = statement;
+		while (current != null) {
+			if (current instanceof MethodNode) {
+				methodNode = (MethodNode) current;
+				break;
+			}
+			current = ast.getParent(current);
+		}
+		if (methodNode != null) {
+			populateItemsFromMethodNode(methodNode, position, items);
+		}
 	}
 
 	private String getMemberName(String memberName, Range range, Position position) {
