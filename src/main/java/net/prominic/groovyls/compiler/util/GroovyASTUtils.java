@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -44,8 +45,11 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
+import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class GroovyASTUtils {
     public static ASTNode getEnclosingNodeOfType(ASTNode offsetNode, Class<? extends ASTNode> nodeType,
@@ -338,5 +342,29 @@ public class GroovyASTUtils {
             }
         }
         return score;
+    }
+
+    public static Range findAddImportRange(ASTNode offsetNode, ASTNodeVisitor astVisitor) {
+        ModuleNode moduleNode = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
+                astVisitor);
+        if (moduleNode == null) {
+            return new Range(new Position(0, 0), new Position(0, 0));
+        }
+        ASTNode afterNode = null;
+        if (afterNode == null) {
+            List<ImportNode> importNodes = moduleNode.getImports();
+            if (importNodes.size() > 0) {
+                afterNode = importNodes.get(importNodes.size() - 1);
+            }
+        }
+        if (afterNode == null) {
+            afterNode = moduleNode.getPackage();
+        }
+        if (afterNode == null) {
+            return new Range(new Position(0, 0), new Position(0, 0));
+        }
+        Range nodeRange = GroovyLanguageServerUtils.astNodeToRange(afterNode);
+        Position position = new Position(nodeRange.getEnd().getLine() + 1, 0);
+        return new Range(position, position);
     }
 }

@@ -46,6 +46,7 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
@@ -208,17 +209,44 @@ public class CompletionProvider {
 				populateItemsFromPropertiesAndFields(classNode.getProperties(), classNode.getFields(), namePrefix,
 						existingNames, items);
 				populateItemsFromMethods(classNode.getMethods(), namePrefix, existingNames, items);
-			}
-			if (current instanceof MethodNode) {
+			} else if (current instanceof MethodNode) {
 				MethodNode methodNode = (MethodNode) current;
 				populateItemsFromVariableScope(methodNode.getVariableScope(), namePrefix, existingNames, items);
-			}
-			if (current instanceof BlockStatement) {
+			} else if (current instanceof BlockStatement) {
 				BlockStatement block = (BlockStatement) current;
 				populateItemsFromVariableScope(block.getVariableScope(), namePrefix, existingNames, items);
 			}
 			current = ast.getParent(current);
 		}
+		populateClasses(node, items);
+	}
+
+	private void populateClasses(ASTNode offsetNode, List<CompletionItem> items) {
+		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ClassNode.class, ast);
+		String enclosingPackageName = enclosingClass.getPackageName();
+
+		Range addImportRange = GroovyASTUtils.findAddImportRange(offsetNode, ast);
+
+		List<CompletionItem> classItems = ast.getClassNodes().stream().map(classNode -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(classNode.getNameWithoutPackage());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
+			String packageName = classNode.getPackageName();
+			if (packageName != null && !packageName.equals(enclosingPackageName)) {
+				List<TextEdit> additionalTextEdits = new ArrayList<>();
+				TextEdit addImportEdit = new TextEdit();
+				StringBuilder addImportBuilder = new StringBuilder();
+				addImportBuilder.append("import ");
+				addImportBuilder.append(classNode.getName());
+				addImportBuilder.append("\n");
+				addImportEdit.setNewText(addImportBuilder.toString());
+				addImportEdit.setRange(addImportRange);
+				additionalTextEdits.add(addImportEdit);
+				item.setAdditionalTextEdits(additionalTextEdits);
+			}
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(classItems);
 	}
 
 	private String getMemberName(String memberName, Range range, Position position) {

@@ -251,7 +251,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("charAt") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
@@ -372,7 +371,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("memberVar") && item.getKind().equals(CompletionItemKind.Field);
 		}).collect(Collectors.toList());
@@ -398,7 +396,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("memberVar") && item.getKind().equals(CompletionItemKind.Field);
 		}).collect(Collectors.toList());
@@ -424,7 +421,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("memberMethod") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
@@ -450,7 +446,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("memberMethod") && item.getKind().equals(CompletionItemKind.Method);
 		}).collect(Collectors.toList());
@@ -475,7 +470,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("paramName") && item.getKind().equals(CompletionItemKind.Variable);
 		}).collect(Collectors.toList());
@@ -500,7 +494,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("paramName") && item.getKind().equals(CompletionItemKind.Variable);
 		}).collect(Collectors.toList());
@@ -526,7 +519,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("localVar") && item.getKind().equals(CompletionItemKind.Variable);
 		}).collect(Collectors.toList());
@@ -552,7 +544,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("localVar") && item.getKind().equals(CompletionItemKind.Variable);
 		}).collect(Collectors.toList());
@@ -580,7 +571,6 @@ class GroovyServicesCompletionTests {
 				.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
 		List<CompletionItem> items = result.getLeft();
-		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("localVar") && item.getKind().equals(CompletionItemKind.Variable);
 		}).collect(Collectors.toList());
