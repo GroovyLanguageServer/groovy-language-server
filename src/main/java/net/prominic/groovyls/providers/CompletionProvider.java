@@ -33,10 +33,12 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
@@ -180,30 +182,37 @@ public class CompletionProvider {
 		populateItemsFromMethods(methods, memberNamePrefix, items);
 	}
 
-	private void populateItemsFromMethodNode(MethodNode method, Position position, List<CompletionItem> items) {
-		List<CompletionItem> variableItems = method.getVariableScope().getDeclaredVariables().values().stream()
-				.map(variable -> {
-					CompletionItem item = new CompletionItem();
-					item.setLabel(variable.getName());
-					item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
-					return item;
-				}).collect(Collectors.toList());
+	private void populateItemsFromVariableScope(VariableScope variableScope, Position position,
+			List<CompletionItem> items) {
+		List<CompletionItem> variableItems = variableScope.getDeclaredVariables().values().stream().map(variable -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(variable.getName());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
+			return item;
+		}).collect(Collectors.toList());
 		items.addAll(variableItems);
+	}
+
+	private void populateItemsFromBlockStatement(BlockStatement block, Position position, List<CompletionItem> items) {
+		populateItemsFromVariableScope(block.getVariableScope(), position, items);
+	}
+
+	private void populateItemsFromMethodNode(MethodNode method, Position position, List<CompletionItem> items) {
+		populateItemsFromVariableScope(method.getVariableScope(), position, items);
 	}
 
 	private void populateItemsFromStatement(Statement statement, Position position, List<CompletionItem> items) {
 
-		MethodNode methodNode = null;
 		ASTNode current = statement;
 		while (current != null) {
 			if (current instanceof MethodNode) {
-				methodNode = (MethodNode) current;
+				populateItemsFromMethodNode((MethodNode) current, position, items);
 				break;
 			}
+			if (current instanceof BlockStatement) {
+				populateItemsFromBlockStatement((BlockStatement) current, position, items);
+			}
 			current = ast.getParent(current);
-		}
-		if (methodNode != null) {
-			populateItemsFromMethodNode(methodNode, position, items);
 		}
 	}
 
