@@ -48,11 +48,12 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 
 public class GroovyASTUtils {
-    public static ClassNode getEnclosingClass(ASTNode node, ASTNodeVisitor astVisitor) {
-        ASTNode current = node;
+    public static ASTNode getEnclosingNodeOfType(ASTNode offsetNode, Class<? extends ASTNode> nodeType,
+            ASTNodeVisitor astVisitor) {
+        ASTNode current = offsetNode;
         while (current != null) {
-            if (current instanceof ClassNode) {
-                return (ClassNode) current;
+            if (nodeType.isInstance(current)) {
+                return current;
             }
             current = astVisitor.getParent(current);
         }
@@ -230,7 +231,7 @@ public class GroovyASTUtils {
         } else if (node instanceof Variable) {
             Variable var = (Variable) node;
             if (var.getName().equals("this")) {
-                ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
+                ClassNode enclosingClass = (ClassNode) getEnclosingNodeOfType(node, ClassNode.class, astVisitor);
                 if (enclosingClass != null) {
                     return enclosingClass;
                 }

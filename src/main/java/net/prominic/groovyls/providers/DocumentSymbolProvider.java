@@ -63,7 +63,7 @@ public class DocumentSymbolProvider {
 				ClassNode classNode = (ClassNode) node;
 				return GroovyLanguageServerUtils.astNodeToSymbolInformation(classNode, uri, null);
 			}
-			ClassNode classNode = GroovyASTUtils.getEnclosingClass(node, ast);
+			ClassNode classNode = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(node, ClassNode.class, ast);
 			if (node instanceof MethodNode) {
 				MethodNode methodNode = (MethodNode) node;
 				return GroovyLanguageServerUtils.astNodeToSymbolInformation(methodNode, uri, classNode.getName());
