@@ -354,7 +354,7 @@ class GroovyServicesCompletionTests {
 	}
 
 	@Test
-	void testCompletionOnPartialVariableExpression() throws Exception {
+	void testCompletionForMemberVariableOnPartialVariableExpression() throws Exception {
 		Path filePath = srcRoot.resolve("Completion.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
@@ -380,7 +380,7 @@ class GroovyServicesCompletionTests {
 	}
 
 	@Test
-	void testCompletionOnCompleteVariableExpression() throws Exception {
+	void testCompletionForMemberVariableOnCompleteVariableExpression() throws Exception {
 		Path filePath = srcRoot.resolve("Completion.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
@@ -401,6 +401,188 @@ class GroovyServicesCompletionTests {
 		Assertions.assertEquals(1, items.size());
 		List<CompletionItem> filteredItems = items.stream().filter(item -> {
 			return item.getLabel().equals("memberVar") && item.getKind().equals(CompletionItemKind.Field);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionForMemberMethodOnPartialVariableExpression() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  String memberMethod() {}\n");
+		contents.append("  public Completion() {\n");
+		contents.append("    mem\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 7);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("memberMethod") && item.getKind().equals(CompletionItemKind.Method);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionForMemberMethodOnCompleteVariableExpression() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  String memberMethod() {}\n");
+		contents.append("  public Completion() {\n");
+		contents.append("    memberMethod\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 7);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("memberMethod") && item.getKind().equals(CompletionItemKind.Method);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionForParameterOnPartialVariableExpression() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public void testMethod(String paramName) {\n");
+		contents.append("    par\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(2, 7);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("paramName") && item.getKind().equals(CompletionItemKind.Variable);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionForParameterOnCompleteVariableExpression() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public void testMethod(String paramName) {\n");
+		contents.append("    paramName\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(2, 13);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("paramName") && item.getKind().equals(CompletionItemKind.Variable);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionForLocalVariableOnPartialVariableExpression() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public void testMethod(String paramName) {\n");
+		contents.append("    String localVar\n");
+		contents.append("    loc\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 7);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("localVar") && item.getKind().equals(CompletionItemKind.Variable);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionForLocalVariableOnCompleteVariableExpression() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public void testMethod() {\n");
+		contents.append("    String localVar\n");
+		contents.append("    localVar\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 12);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("localVar") && item.getKind().equals(CompletionItemKind.Variable);
+		}).collect(Collectors.toList());
+		Assertions.assertEquals(1, filteredItems.size());
+	}
+
+	@Test
+	void testCompletionForLocalVariableOnPartialVariableExpressionInsideBlock() throws Exception {
+		Path filePath = srcRoot.resolve("Completion.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Completion {\n");
+		contents.append("  public void testMethod(String paramName) {\n");
+		contents.append("    String localVar\n");
+		contents.append("    if(true) {\n");
+		contents.append("      loc\n");
+		contents.append("    }\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(4, 9);
+		Either<List<CompletionItem>, CompletionList> result = services
+				.completion(new CompletionParams(textDocument, position)).get();
+		Assertions.assertTrue(result.isLeft());
+		List<CompletionItem> items = result.getLeft();
+		Assertions.assertEquals(1, items.size());
+		List<CompletionItem> filteredItems = items.stream().filter(item -> {
+			return item.getLabel().equals("localVar") && item.getKind().equals(CompletionItemKind.Variable);
 		}).collect(Collectors.toList());
 		Assertions.assertEquals(1, filteredItems.size());
 	}
