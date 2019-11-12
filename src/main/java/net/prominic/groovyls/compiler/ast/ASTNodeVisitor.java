@@ -75,6 +75,7 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -382,15 +383,14 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	// GroovyCodeVisitor
 
-	//this has the same range as a class, which isn't ideal
-	/*public void visitBlockStatement(BlockStatement node) {
+	public void visitBlockStatement(BlockStatement node) {
 		pushASTNode(node);
 		try {
 			super.visitBlockStatement(node);
 		} finally {
 			popASTNode();
 		}
-	}*/
+	}
 
 	public void visitForLoop(ForStatement node) {
 		pushASTNode(node);
