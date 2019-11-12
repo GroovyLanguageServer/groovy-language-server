@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -83,6 +84,8 @@ public class CompletionProvider {
 			populateItemsFromPropertyExpression((PropertyExpression) parentNode, position, items);
 		} else if (offsetNode instanceof MethodCallExpression) {
 			populateItemsFromMethodCallExpression((MethodCallExpression) offsetNode, position, items);
+		} else if (offsetNode instanceof ConstructorCallExpression) {
+			populateItemsFromConstructorCallExpression((ConstructorCallExpression) offsetNode, position, items);
 		} else if (parentNode instanceof MethodCallExpression) {
 			populateItemsFromMethodCallExpression((MethodCallExpression) parentNode, position, items);
 		} else if (offsetNode instanceof VariableExpression) {
@@ -108,6 +111,13 @@ public class CompletionProvider {
 		Range methodRange = GroovyLanguageServerUtils.astNodeToRange(methodCallExpr.getMethod());
 		String memberName = getMemberName(methodCallExpr.getMethodAsString(), methodRange, position);
 		populateItemsFromExpression(methodCallExpr.getObjectExpression(), memberName, items);
+	}
+
+	private void populateItemsFromConstructorCallExpression(ConstructorCallExpression constructorCallExpr,
+			Position position, List<CompletionItem> items) {
+		Range typeRange = GroovyLanguageServerUtils.astNodeToRange(constructorCallExpr.getType());
+		String typeName = getMemberName(constructorCallExpr.getType().getNameWithoutPackage(), typeRange, position);
+		populateClasses(constructorCallExpr, typeName, new HashSet<>(), items);
 	}
 
 	private void populateItemsFromVariableExpression(VariableExpression varExpr, Position position,
