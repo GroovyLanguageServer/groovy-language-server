@@ -132,10 +132,9 @@ public class CompletionProvider {
 				importRange.getEnd().getCharacter() - importNode.getType().getName().length()));
 		String importText = getMemberName(importNode.getType().getName(), importRange, position);
 
-		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(importNode, ClassNode.class, ast);
-		String enclosingPackageName = enclosingClass.getPackageName();
-		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(enclosingClass,
-				ModuleNode.class, ast);
+		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(importNode, ModuleNode.class,
+				ast);
+		String enclosingPackageName = enclosingModule.getPackageName();
 		List<String> importNames = enclosingModule.getImports().stream()
 				.map(otherImportNode -> otherImportNode.getClassName()).collect(Collectors.toList());
 
@@ -335,13 +334,11 @@ public class CompletionProvider {
 
 	private void populateClasses(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
 			List<CompletionItem> items) {
-		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ClassNode.class, ast);
-		String enclosingPackageName = enclosingClass.getPackageName();
-
 		Range addImportRange = GroovyASTUtils.findAddImportRange(offsetNode, ast);
 
-		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(enclosingClass,
-				ModuleNode.class, ast);
+		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
+				ast);
+		String enclosingPackageName = enclosingModule.getPackageName();
 		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
 				.collect(Collectors.toList());
 
