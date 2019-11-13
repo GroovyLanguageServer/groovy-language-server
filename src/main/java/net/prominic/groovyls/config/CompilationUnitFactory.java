@@ -62,12 +62,8 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
 		CompilerConfiguration config = getConfiguration();
 
-		GroovyClassLoader classLoader = new GroovyClassLoader();
-		for (String value : config.getClasspath()) {
-			//add all classpath values to the class loader, or there will be
-			//compiler errors about missing classes that should be there
-			classLoader.addClasspath(value);
-		}
+		GroovyClassLoader classLoader = new GroovyClassLoader(ClassLoader.getSystemClassLoader().getParent(), config,
+				true);
 
 		Set<URI> changedUris = fileContentsTracker.getChangedURIs();
 		if (compilationUnit == null) {
