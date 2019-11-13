@@ -32,12 +32,12 @@ task copyLocal(type: Copy) {
 }
 
 compileTypeScript {
-	sourcemap = true
+  sourcemap = true
   outputDir = buildDir
 }
 
-tasks.build.dependsOn tasks.compileTypeScript
 tasks.build.dependsOn tasks.npmInstall
+tasks.build.dependsOn tasks.compileTypeScript
 tasks.build.dependsOn tasks.copyJar
 tasks.build.dependsOn tasks.copyLocal
 
