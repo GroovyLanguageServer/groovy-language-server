@@ -132,6 +132,39 @@ public class CompletionProvider {
 				importRange.getEnd().getCharacter() - importNode.getType().getName().length()));
 		String importText = getMemberName(importNode.getType().getName(), importRange, position);
 
+		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(importNode, ClassNode.class, ast);
+		String enclosingPackageName = enclosingClass.getPackageName();
+		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(enclosingClass,
+				ModuleNode.class, ast);
+		List<String> importNames = enclosingModule.getImports().stream()
+				.map(otherImportNode -> otherImportNode.getClassName()).collect(Collectors.toList());
+
+		List<CompletionItem> localClassItems = ast.getClassNodes().stream().filter(classNode -> {
+			String packageName = classNode.getPackageName();
+			if (packageName == null || packageName.length() == 0 || packageName.equals(enclosingPackageName)) {
+				return false;
+			}
+			String className = classNode.getName();
+			String classNameWithoutPackage = classNode.getNameWithoutPackage();
+			if (!className.startsWith(importText) && !classNameWithoutPackage.startsWith(importText)) {
+				return false;
+			}
+			if (importNames.contains(className)) {
+				return false;
+			}
+			return true;
+		}).map(classNode -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(classNode.getName());
+			item.setTextEdit(new TextEdit(importRange, classNode.getName()));
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
+			if (classNode.getNameWithoutPackage().startsWith(importText)) {
+				item.setSortText(classNode.getNameWithoutPackage());
+			}
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(localClassItems);
+
 		ScanResult scanResult = scanClasses();
 		if (scanResult == null) {
 			return;
@@ -155,12 +188,19 @@ public class CompletionProvider {
 		items.addAll(packageItems);
 
 		List<CompletionItem> classItems = classes.stream().filter(classInfo -> {
+			String packageName = classInfo.getPackageName();
+			if (packageName == null || packageName.length() == 0 || packageName.equals(enclosingPackageName)) {
+				return false;
+			}
 			String className = classInfo.getName();
 			String classNameWithoutPackage = classInfo.getSimpleName();
-			if (className.startsWith(importText) || classNameWithoutPackage.startsWith(importText)) {
-				return true;
+			if (!className.startsWith(importText) && !classNameWithoutPackage.startsWith(importText)) {
+				return false;
 			}
-			return false;
+			if (importNames.contains(className)) {
+				return false;
+			}
+			return true;
 		}).map(classInfo -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classInfo.getName());
@@ -305,6 +345,31 @@ public class CompletionProvider {
 		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
 				.collect(Collectors.toList());
 
+		List<CompletionItem> localClassItems = ast.getClassNodes().stream().filter(classNode -> {
+			String classNameWithoutPackage = classNode.getNameWithoutPackage();
+			String className = classNode.getName();
+			if (classNameWithoutPackage.startsWith(namePrefix) && !existingNames.contains(className)) {
+				existingNames.add(className);
+				return true;
+			}
+			return false;
+		}).map(classNode -> {
+			String className = classNode.getName();
+			String packageName = classNode.getPackageName();
+			CompletionItem item = new CompletionItem();
+			item.setLabel(classNode.getNameWithoutPackage());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
+			item.setDetail(packageName);
+			if (packageName != null && !packageName.equals(enclosingPackageName) && !importNames.contains(className)) {
+				List<TextEdit> additionalTextEdits = new ArrayList<>();
+				TextEdit addImportEdit = createAddImportTextEdit(className, addImportRange);
+				additionalTextEdits.add(addImportEdit);
+				item.setAdditionalTextEdits(additionalTextEdits);
+			}
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(localClassItems);
+
 		ScanResult scanResult = scanClasses();
 		if (scanResult == null) {
 			return;
@@ -328,13 +393,7 @@ public class CompletionProvider {
 			item.setKind(classInfoToCompletionItemKind(classInfo));
 			if (packageName != null && !packageName.equals(enclosingPackageName) && !importNames.contains(className)) {
 				List<TextEdit> additionalTextEdits = new ArrayList<>();
-				TextEdit addImportEdit = new TextEdit();
-				StringBuilder addImportBuilder = new StringBuilder();
-				addImportBuilder.append("import ");
-				addImportBuilder.append(className);
-				addImportBuilder.append("\n");
-				addImportEdit.setNewText(addImportBuilder.toString());
-				addImportEdit.setRange(addImportRange);
+				TextEdit addImportEdit = createAddImportTextEdit(className, addImportRange);
 				additionalTextEdits.add(addImportEdit);
 				item.setAdditionalTextEdits(additionalTextEdits);
 			}
@@ -362,6 +421,17 @@ public class CompletionProvider {
 			return CompletionItemKind.Enum;
 		}
 		return CompletionItemKind.Class;
+	}
+
+	private TextEdit createAddImportTextEdit(String className, Range range) {
+		TextEdit edit = new TextEdit();
+		StringBuilder builder = new StringBuilder();
+		builder.append("import ");
+		builder.append(className);
+		builder.append("\n");
+		edit.setNewText(builder.toString());
+		edit.setRange(range);
+		return edit;
 	}
 
 	private ScanResult scanClasses() {
