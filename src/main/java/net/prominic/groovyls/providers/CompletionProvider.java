@@ -132,17 +132,12 @@ public class CompletionProvider {
 				importRange.getEnd().getCharacter() - importNode.getType().getName().length()));
 		String importText = getMemberName(importNode.getType().getName(), importRange, position);
 
-		List<ClassInfo> classes = null;
-		List<PackageInfo> packages = null;
-		try {
-			ScanResult result = new ClassGraph().addClassLoader(classLoader).enableClassInfo()
-					.enableSystemJarsAndModules().scan();
-			classes = result.getAllClasses();
-			packages = result.getPackageInfo();
-		} catch (ClassGraphException e) {
-			e.printStackTrace(System.err);
+		ScanResult scanResult = scanClasses();
+		if (scanResult == null) {
 			return;
 		}
+		List<ClassInfo> classes = scanResult.getAllClasses();
+		List<PackageInfo> packages = scanResult.getPackageInfo();
 
 		List<CompletionItem> packageItems = packages.stream().filter(packageInfo -> {
 			String packageName = packageInfo.getName();
@@ -298,16 +293,6 @@ public class CompletionProvider {
 		populateClasses(node, namePrefix, existingNames, items);
 	}
 
-	private CompletionItemKind classInfoToCompletionItemKind(ClassInfo classInfo) {
-		if (classInfo.isInterface()) {
-			return CompletionItemKind.Interface;
-		}
-		if (classInfo.isEnum()) {
-			return CompletionItemKind.Enum;
-		}
-		return CompletionItemKind.Class;
-	}
-
 	private void populateClasses(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
 			List<CompletionItem> items) {
 		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ClassNode.class, ast);
@@ -320,15 +305,11 @@ public class CompletionProvider {
 		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
 				.collect(Collectors.toList());
 
-		List<ClassInfo> classes = null;
-		try {
-			ScanResult result = new ClassGraph().addClassLoader(classLoader).enableClassInfo()
-					.enableSystemJarsAndModules().scan();
-			classes = result.getAllClasses();
-		} catch (ClassGraphException e) {
-			e.printStackTrace(System.err);
+		ScanResult scanResult = scanClasses();
+		if (scanResult == null) {
 			return;
 		}
+		List<ClassInfo> classes = scanResult.getAllClasses();
 
 		List<CompletionItem> classItems = classes.stream().filter(classInfo -> {
 			String className = classInfo.getName();
@@ -371,5 +352,24 @@ public class CompletionProvider {
 			}
 		}
 		return "";
+	}
+
+	private CompletionItemKind classInfoToCompletionItemKind(ClassInfo classInfo) {
+		if (classInfo.isInterface()) {
+			return CompletionItemKind.Interface;
+		}
+		if (classInfo.isEnum()) {
+			return CompletionItemKind.Enum;
+		}
+		return CompletionItemKind.Class;
+	}
+
+	private ScanResult scanClasses() {
+		try {
+			return new ClassGraph().overrideClassLoaders(classLoader).enableClassInfo().enableSystemJarsAndModules()
+					.scan();
+		} catch (ClassGraphException e) {
+		}
+		return null;
 	}
 }
