@@ -53,11 +53,12 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import org.reflections.Reflections;
-import org.reflections.scanners.SubTypesScanner;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassGraphException;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.PackageInfo;
+import io.github.classgraph.ScanResult;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
@@ -128,102 +129,63 @@ public class CompletionProvider {
 	}
 
 	private void populateItemsFromImportNode(ImportNode importNode, Position position, List<CompletionItem> items) {
-		String packageName = importNode.getType().getName();
+		Range importRange = GroovyLanguageServerUtils.astNodeToRange(importNode);
+		//skip the "import " at the beginning
+		importRange.setStart(new Position(importRange.getEnd().getLine(),
+				importRange.getEnd().getCharacter() - importNode.getType().getName().length()));
+		String importText = getMemberName(importNode.getType().getName(), importRange, position);
 
-		if (packageName.equals("a")) {
-			packageName = null;
+		List<ClassInfo> classes = null;
+		List<PackageInfo> packages = null;
+		try {
+			ScanResult result = new ClassGraph().addClassLoader(compilationUnit.getClassLoader()).enableClassInfo()
+					.enableSystemJarsAndModules().scan();
+			classes = result.getAllClasses();
+			packages = result.getPackageInfo();
+		} catch (ClassGraphException e) {
+			e.printStackTrace(System.err);
+			return;
 		}
 
-		List<ClassLoader> classLoadersList = new ArrayList<>();
-		classLoadersList.add(ClasspathHelper.contextClassLoader());
-		classLoadersList.add(ClasspathHelper.staticClassLoader());
-		classLoadersList.add(this.compilationUnit.getClassLoader());
-
-		Reflections reflections = new Reflections(
-				new ConfigurationBuilder().setScanners(new SubTypesScanner(false /* don't exclude Object.class */))
-						.setUrls(ClasspathHelper.forClassLoader(classLoadersList.toArray(new ClassLoader[0]))));
-
-		Set<String> allTypes = reflections.getAllTypes();
-
-		// if completion is invoked after a . char somehow the importnode has an alias "a" automatically attached to the package name
-		// we remove that ".a" from the package name so we have all completion options
-		if (packageName.endsWith(".a")) {
-			packageName = packageName.substring(0, packageName.length() - 1);
-		}
-
-		List<CompletionItem> packages = getPackagesList(classLoadersList, packageName, position, allTypes);
-		List<CompletionItem> classes = getClassesList(classLoadersList, packageName, position, allTypes);
-
-		items.addAll(packages);
-		items.addAll(classes);
-	}
-
-	private List<CompletionItem> getPackagesList(List<ClassLoader> classLoadersList, final String packageName,
-			Position position, Set<String> allTypes) {
-
-		List<String> packages = new ArrayList<>();
-		for (String t : allTypes) {
-			if (packageName == null || packageName.trim().length() < 1
-					|| t.toLowerCase().startsWith(packageName.toLowerCase())) {
-				int idx = t.lastIndexOf('.');
-				String pak = t;
-				if (Character.isUpperCase(t.charAt(idx + 1))) {
-					pak = t.substring(0, idx);
-				}
-				if (!packages.contains(pak)) {
-					packages.add(pak);
-				}
+		List<CompletionItem> packageItems = packages.stream().filter(packageInfo -> {
+			String packageName = packageInfo.getName();
+			if (packageName.startsWith(importText)) {
+				return true;
 			}
-		}
-		List<CompletionItem> items = new ArrayList<>();
-		for (String p : packages) {
+			return false;
+		}).map(packageInfo -> {
 			CompletionItem item = new CompletionItem();
-			String label = p;
-			String completion = String.format("%s.*;", label);
-			if (packageName != null && packageName.trim().length() > 0 && !packageName.trim().equalsIgnoreCase("a")) {
-				completion = completion.substring(completion.indexOf(packageName) + packageName.length());
+			item.setLabel(packageInfo.getName());
+			item.setTextEdit(new TextEdit(importRange, packageInfo.getName()));
+			item.setKind(CompletionItemKind.Module);
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(packageItems);
+
+		List<CompletionItem> classItems = classes.stream().filter(classInfo -> {
+			String className = classInfo.getName();
+			String classNameWithoutPackage = classInfo.getSimpleName();
+			if (className.startsWith(importText) || classNameWithoutPackage.startsWith(importText)) {
+				return true;
+			}
+			return false;
+		}).map(classInfo -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(classInfo.getName());
+			item.setTextEdit(new TextEdit(importRange, classInfo.getName()));
+			if (classInfo.isInterface()) {
+				item.setKind(CompletionItemKind.Interface);
+			} else if (classInfo.isEnum()) {
+				item.setKind(CompletionItemKind.Enum);
 			} else {
-				completion = "*;";
+				item.setKind(CompletionItemKind.Class);
 			}
-			item.setDetail(label);
-			item.setLabel(label);
-			item.setInsertText(completion);
-			item.setTextEdit(new TextEdit(
-					new Range(position,
-							new Position(position.getLine(), position.getCharacter() + completion.length())),
-					completion));
-			item.setKind(CompletionItemKind.Class);
-			item.setDocumentation(p);
-			item.setSortText(String.format("0_%s", label));
-			items.add(item);
-		}
-		return items;
-	}
-
-	private List<CompletionItem> getClassesList(List<ClassLoader> classLoadersList, final String packageName,
-			Position position, Set<String> allTypes) {
-		List<String> types = new ArrayList<>();
-		for (String t : allTypes) {
-			String possibleClassName = t.lastIndexOf(".") != -1 ? t.substring(t.lastIndexOf(".") + 1) : t;
-			if (possibleClassName.toLowerCase().indexOf(packageName.toLowerCase()) != -1 && !types.contains(t)) {
-				types.add(t);
+			if (classInfo.getSimpleName().startsWith(importText)) {
+				item.setSortText(classInfo.getSimpleName());
 			}
-		}
-		List<CompletionItem> items = new ArrayList<>();
-		for (String t : types) {
-			CompletionItem item = new CompletionItem();
-			String label = t.substring(t.lastIndexOf(".") + 1);
-			String completion = String.format("%s;", t);
-			item.setDetail(t);
-			item.setLabel(label);
-			item.setInsertText(completion);
-			item.setKind(CompletionItemKind.Class);
-			item.setDocumentation(t);
-			item.setSortText(String.format("1_%s", label));
-			items.add(item);
-		}
-
-		return items;
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(classItems);
 	}
 
 	private void populateItemsFromConstructorCallExpression(ConstructorCallExpression constructorCallExpr,
@@ -393,7 +355,7 @@ public class CompletionProvider {
 				&& position.getCharacter() > range.getStart().getCharacter()) {
 			int length = position.getCharacter() - range.getStart().getCharacter();
 			if (length > 0 && length <= memberName.length()) {
-				return memberName.substring(0, length);
+				return memberName.substring(0, length).trim();
 			}
 		}
 		return "";
