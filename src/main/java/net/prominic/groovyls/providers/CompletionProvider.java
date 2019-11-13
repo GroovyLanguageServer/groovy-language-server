@@ -173,13 +173,7 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classInfo.getName());
 			item.setTextEdit(new TextEdit(importRange, classInfo.getName()));
-			if (classInfo.isInterface()) {
-				item.setKind(CompletionItemKind.Interface);
-			} else if (classInfo.isEnum()) {
-				item.setKind(CompletionItemKind.Enum);
-			} else {
-				item.setKind(CompletionItemKind.Class);
-			}
+			item.setKind(classInfoToCompletionItemKind(classInfo));
 			if (classInfo.getSimpleName().startsWith(importText)) {
 				item.setSortText(classInfo.getSimpleName());
 			}
@@ -307,6 +301,16 @@ public class CompletionProvider {
 		populateClasses(node, namePrefix, existingNames, items);
 	}
 
+	private CompletionItemKind classInfoToCompletionItemKind(ClassInfo classInfo) {
+		if (classInfo.isInterface()) {
+			return CompletionItemKind.Interface;
+		}
+		if (classInfo.isEnum()) {
+			return CompletionItemKind.Enum;
+		}
+		return CompletionItemKind.Class;
+	}
+
 	private void populateClasses(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
 			List<CompletionItem> items) {
 		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ClassNode.class, ast);
@@ -319,26 +323,37 @@ public class CompletionProvider {
 		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
 				.collect(Collectors.toList());
 
-		List<CompletionItem> classItems = ast.getClassNodes().stream().filter(classNode -> {
-			String classNameWithoutPackage = classNode.getNameWithoutPackage();
-			String className = classNode.getName();
+		List<ClassInfo> classes = null;
+		try {
+			ScanResult result = new ClassGraph().addClassLoader(compilationUnit.getClassLoader()).enableClassInfo()
+					.enableSystemJarsAndModules().scan();
+			classes = result.getAllClasses();
+		} catch (ClassGraphException e) {
+			e.printStackTrace(System.err);
+			return;
+		}
+
+		List<CompletionItem> classItems = classes.stream().filter(classInfo -> {
+			String className = classInfo.getName();
+			String classNameWithoutPackage = classInfo.getSimpleName();
 			if (classNameWithoutPackage.startsWith(namePrefix) && !existingNames.contains(className)) {
 				existingNames.add(className);
 				return true;
 			}
 			return false;
-		}).map(classNode -> {
+		}).map(classInfo -> {
+			String className = classInfo.getName();
+			String packageName = classInfo.getPackageName();
 			CompletionItem item = new CompletionItem();
-			item.setLabel(classNode.getNameWithoutPackage());
-			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
-			String packageName = classNode.getPackageName();
-			if (packageName != null && !packageName.equals(enclosingPackageName)
-					&& !importNames.contains(classNode.getName())) {
+			item.setLabel(classInfo.getSimpleName());
+			item.setDetail(packageName);
+			item.setKind(classInfoToCompletionItemKind(classInfo));
+			if (packageName != null && !packageName.equals(enclosingPackageName) && !importNames.contains(className)) {
 				List<TextEdit> additionalTextEdits = new ArrayList<>();
 				TextEdit addImportEdit = new TextEdit();
 				StringBuilder addImportBuilder = new StringBuilder();
 				addImportBuilder.append("import ");
-				addImportBuilder.append(classNode.getName());
+				addImportBuilder.append(className);
 				addImportBuilder.append("\n");
 				addImportEdit.setNewText(addImportBuilder.toString());
 				addImportEdit.setRange(addImportRange);
