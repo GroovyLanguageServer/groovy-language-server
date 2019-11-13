@@ -41,7 +41,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.eclipse.lsp4j.CompletionContext;
@@ -54,6 +53,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import groovy.lang.GroovyClassLoader;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassGraphException;
 import io.github.classgraph.ClassInfo;
@@ -64,11 +64,12 @@ import net.prominic.groovyls.compiler.util.GroovyASTUtils;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class CompletionProvider {
-	private CompilationUnit compilationUnit;
 	private ASTNodeVisitor ast;
+	private GroovyClassLoader classLoader;
 
-	public CompletionProvider(ASTNodeVisitor ast) {
+	public CompletionProvider(ASTNodeVisitor ast, GroovyClassLoader classLoader) {
 		this.ast = ast;
+		this.classLoader = classLoader;
 	}
 
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> provideCompletion(
@@ -110,10 +111,6 @@ public class CompletionProvider {
 		return CompletableFuture.completedFuture(Either.forLeft(items));
 	}
 
-	public void setCompilationUnit(CompilationUnit unit) {
-		this.compilationUnit = unit;
-	}
-
 	private void populateItemsFromPropertyExpression(PropertyExpression propExpr, Position position,
 			List<CompletionItem> items) {
 		Range propertyRange = GroovyLanguageServerUtils.astNodeToRange(propExpr.getProperty());
@@ -138,7 +135,7 @@ public class CompletionProvider {
 		List<ClassInfo> classes = null;
 		List<PackageInfo> packages = null;
 		try {
-			ScanResult result = new ClassGraph().addClassLoader(compilationUnit.getClassLoader()).enableClassInfo()
+			ScanResult result = new ClassGraph().addClassLoader(classLoader).enableClassInfo()
 					.enableSystemJarsAndModules().scan();
 			classes = result.getAllClasses();
 			packages = result.getPackageInfo();
@@ -325,7 +322,7 @@ public class CompletionProvider {
 
 		List<ClassInfo> classes = null;
 		try {
-			ScanResult result = new ClassGraph().addClassLoader(compilationUnit.getClassLoader()).enableClassInfo()
+			ScanResult result = new ClassGraph().addClassLoader(classLoader).enableClassInfo()
 					.enableSystemJarsAndModules().scan();
 			classes = result.getAllClasses();
 		} catch (ClassGraphException e) {
