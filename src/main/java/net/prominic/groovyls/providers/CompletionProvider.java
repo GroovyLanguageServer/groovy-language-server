@@ -33,12 +33,17 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
@@ -87,13 +92,19 @@ public class CompletionProvider {
 			populateItemsFromPropertyExpression((PropertyExpression) parentNode, position, items);
 		} else if (offsetNode instanceof MethodCallExpression) {
 			populateItemsFromMethodCallExpression((MethodCallExpression) offsetNode, position, items);
+		} else if (offsetNode instanceof ConstructorCallExpression) {
+			populateItemsFromConstructorCallExpression((ConstructorCallExpression) offsetNode, position, items);
 		} else if (parentNode instanceof MethodCallExpression) {
 			populateItemsFromMethodCallExpression((MethodCallExpression) parentNode, position, items);
 		} else if (offsetNode instanceof VariableExpression) {
 			populateItemsFromVariableExpression((VariableExpression) offsetNode, position, items);
 		} else if (offsetNode instanceof ImportNode) {
-            populateItemsFromImportExpression((ImportNode) offsetNode, position, items);
-        }
+			populateItemsFromImportNode((ImportNode) offsetNode, position, items);
+		} else if (offsetNode instanceof MethodNode) {
+			populateItemsFromScope(offsetNode, "", items);
+		} else if (offsetNode instanceof Statement) {
+			populateItemsFromScope(offsetNode, "", items);
+		}
 
 		return CompletableFuture.completedFuture(Either.forLeft(items));
 	}
@@ -116,7 +127,7 @@ public class CompletionProvider {
 		populateItemsFromExpression(methodCallExpr.getObjectExpression(), memberName, items);
 	}
 
-	private void populateItemsFromImportExpression(ImportNode importNode, Position position,
+	private void populateItemsFromImportNode(ImportNode importNode, Position position,
                                                    List<CompletionItem> items) {
         String packageName = importNode.getType().getName();
 
@@ -208,26 +219,29 @@ public class CompletionProvider {
 		}
 
 		return items;
+  }
+
+	private void populateItemsFromConstructorCallExpression(ConstructorCallExpression constructorCallExpr,
+			Position position, List<CompletionItem> items) {
+		Range typeRange = GroovyLanguageServerUtils.astNodeToRange(constructorCallExpr.getType());
+		String typeName = getMemberName(constructorCallExpr.getType().getNameWithoutPackage(), typeRange, position);
+		populateClasses(constructorCallExpr, typeName, new HashSet<>(), items);
 	}
 
 	private void populateItemsFromVariableExpression(VariableExpression varExpr, Position position,
 			List<CompletionItem> items) {
 		Range varRange = GroovyLanguageServerUtils.astNodeToRange(varExpr);
 		String memberName = getMemberName(varExpr.getName(), varRange, position);
-		ClassNode enclosingClass = GroovyASTUtils.getEnclosingClass(varExpr, ast);
-		populateItemsFromPropertiesAndFields(enclosingClass.getProperties(), enclosingClass.getFields(), memberName,
-				items);
-		populateItemsFromMethods(enclosingClass.getMethods(), memberName, items);
+		populateItemsFromScope(varExpr, memberName, items);
 	}
 
 	private void populateItemsFromPropertiesAndFields(List<PropertyNode> properties, List<FieldNode> fields,
-			String memberNamePrefix, List<CompletionItem> items) {
-		Set<String> foundNames = new HashSet<>();
+			String memberNamePrefix, Set<String> existingNames, List<CompletionItem> items) {
 		List<CompletionItem> propItems = properties.stream().filter(property -> {
 			String name = property.getName();
 			//sometimes, a property and a field will have the same name
-			if (name.startsWith(memberNamePrefix) && !foundNames.contains(name)) {
-				foundNames.add(name);
+			if (name.startsWith(memberNamePrefix) && !existingNames.contains(name)) {
+				existingNames.add(name);
 				return true;
 			}
 			return false;
@@ -241,8 +255,8 @@ public class CompletionProvider {
 		List<CompletionItem> fieldItems = fields.stream().filter(field -> {
 			String name = field.getName();
 			//sometimes, a property and a field will have the same name
-			if (name.startsWith(memberNamePrefix) && !foundNames.contains(name)) {
-				foundNames.add(name);
+			if (name.startsWith(memberNamePrefix) && !existingNames.contains(name)) {
+				existingNames.add(name);
 				return true;
 			}
 			return false;
@@ -255,14 +269,13 @@ public class CompletionProvider {
 		items.addAll(fieldItems);
 	}
 
-	private void populateItemsFromMethods(List<MethodNode> methods, String memberNamePrefix,
+	private void populateItemsFromMethods(List<MethodNode> methods, String memberNamePrefix, Set<String> existingNames,
 			List<CompletionItem> items) {
-		Set<String> foundMethods = new HashSet<>();
 		List<CompletionItem> methodItems = methods.stream().filter(method -> {
 			String methodName = method.getName();
 			//overloads can cause duplicates
-			if (methodName.startsWith(memberNamePrefix) && !foundMethods.contains(methodName)) {
-				foundMethods.add(methodName);
+			if (methodName.startsWith(memberNamePrefix) && !existingNames.contains(methodName)) {
+				existingNames.add(methodName);
 				return true;
 			}
 			return false;
@@ -276,12 +289,98 @@ public class CompletionProvider {
 	}
 
 	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
+		Set<String> existingNames = new HashSet<>();
+
 		List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
 		List<FieldNode> fields = GroovyASTUtils.getFieldsForLeftSideOfPropertyExpression(leftSide, ast);
-		populateItemsFromPropertiesAndFields(properties, fields, memberNamePrefix, items);
+		populateItemsFromPropertiesAndFields(properties, fields, memberNamePrefix, existingNames, items);
 
 		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
-		populateItemsFromMethods(methods, memberNamePrefix, items);
+		populateItemsFromMethods(methods, memberNamePrefix, existingNames, items);
+	}
+
+	private void populateItemsFromVariableScope(VariableScope variableScope, String memberNamePrefix,
+			Set<String> existingNames, List<CompletionItem> items) {
+		List<CompletionItem> variableItems = variableScope.getDeclaredVariables().values().stream().filter(variable -> {
+
+			String variableName = variable.getName();
+			//overloads can cause duplicates
+			if (variableName.startsWith(memberNamePrefix) && !existingNames.contains(variableName)) {
+				existingNames.add(variableName);
+				return true;
+			}
+			return false;
+		}).map(variable -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(variable.getName());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(variableItems);
+	}
+
+	private void populateItemsFromScope(ASTNode node, String namePrefix, List<CompletionItem> items) {
+		Set<String> existingNames = new HashSet<>();
+		ASTNode current = node;
+		while (current != null) {
+			if (current instanceof ClassNode) {
+				ClassNode classNode = (ClassNode) current;
+				populateItemsFromPropertiesAndFields(classNode.getProperties(), classNode.getFields(), namePrefix,
+						existingNames, items);
+				populateItemsFromMethods(classNode.getMethods(), namePrefix, existingNames, items);
+			} else if (current instanceof MethodNode) {
+				MethodNode methodNode = (MethodNode) current;
+				populateItemsFromVariableScope(methodNode.getVariableScope(), namePrefix, existingNames, items);
+			} else if (current instanceof BlockStatement) {
+				BlockStatement block = (BlockStatement) current;
+				populateItemsFromVariableScope(block.getVariableScope(), namePrefix, existingNames, items);
+			}
+			current = ast.getParent(current);
+		}
+		populateClasses(node, namePrefix, existingNames, items);
+	}
+
+	private void populateClasses(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
+			List<CompletionItem> items) {
+		ClassNode enclosingClass = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ClassNode.class, ast);
+		String enclosingPackageName = enclosingClass.getPackageName();
+
+		Range addImportRange = GroovyASTUtils.findAddImportRange(offsetNode, ast);
+
+		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(enclosingClass,
+				ModuleNode.class, ast);
+		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
+				.collect(Collectors.toList());
+
+		List<CompletionItem> classItems = ast.getClassNodes().stream().filter(classNode -> {
+			String classNameWithoutPackage = classNode.getNameWithoutPackage();
+			String className = classNode.getName();
+			if (classNameWithoutPackage.startsWith(namePrefix) && !existingNames.contains(className)) {
+				existingNames.add(className);
+				return true;
+			}
+			return false;
+		}).map(classNode -> {
+			CompletionItem item = new CompletionItem();
+			item.setLabel(classNode.getNameWithoutPackage());
+			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
+			String packageName = classNode.getPackageName();
+			if (packageName != null && !packageName.equals(enclosingPackageName)
+					&& !importNames.contains(classNode.getName())) {
+				List<TextEdit> additionalTextEdits = new ArrayList<>();
+				TextEdit addImportEdit = new TextEdit();
+				StringBuilder addImportBuilder = new StringBuilder();
+				addImportBuilder.append("import ");
+				addImportBuilder.append(classNode.getName());
+				addImportBuilder.append("\n");
+				addImportEdit.setNewText(addImportBuilder.toString());
+				addImportEdit.setRange(addImportRange);
+				additionalTextEdits.add(addImportEdit);
+				item.setAdditionalTextEdits(additionalTextEdits);
+			}
+			return item;
+		}).collect(Collectors.toList());
+		items.addAll(classItems);
 	}
 
 	private String getMemberName(String memberName, Range range, Position position) {

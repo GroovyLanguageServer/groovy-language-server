@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.google.gson.JsonArray;
@@ -95,8 +97,11 @@ import net.prominic.groovyls.providers.TypeDefinitionProvider;
 import net.prominic.groovyls.providers.WorkspaceSymbolProvider;
 import net.prominic.groovyls.util.FileContentsTracker;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.lsp.utils.Positions;
 
 public class GroovyServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
+	private static final Pattern PATTERN_CONSTRUCTOR_CALL = Pattern.compile(".*new \\w*$");
+
 	private LanguageClient languageClient;
 
 	private Path workspaceRoot;
@@ -219,8 +224,15 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			originalSource = fileContentsTracker.getContents(uri);
 			VersionedTextDocumentIdentifier versionedTextDocument = new VersionedTextDocumentIdentifier(
 					textDocument.getUri(), 1);
-			TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent(
-					new Range(position, position), 0, "a");
+			int offset = Positions.getOffset(originalSource, position);
+			String lineBeforeOffset = originalSource.substring(offset - position.getCharacter(), offset);
+			Matcher matcher = PATTERN_CONSTRUCTOR_CALL.matcher(lineBeforeOffset);
+			TextDocumentContentChangeEvent changeEvent = null;
+			if (matcher.matches()) {
+				changeEvent = new TextDocumentContentChangeEvent(new Range(position, position), 0, "a()");
+			} else {
+				changeEvent = new TextDocumentContentChangeEvent(new Range(position, position), 0, "a");
+			}
 			DidChangeTextDocumentParams didChangeParams = new DidChangeTextDocumentParams(versionedTextDocument,
 					Collections.singletonList(changeEvent));
 			//if the offset node is null, there is probably a syntax error.

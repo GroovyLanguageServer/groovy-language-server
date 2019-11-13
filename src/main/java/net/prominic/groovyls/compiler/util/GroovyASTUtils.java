@@ -1,20 +1,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2016 Prominic.NET, Inc.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0 
-// 
-// Unless required by applicable law or agreed to in writing, software 
-// distributed under the License is distributed on an "AS IS" BASIS, 
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and 
+// See the License for the specific language governing permissions and
 // limitations under the License
-// 
+//
 // Author: Prominic.NET, Inc.
-// No warranty of merchantability or fitness of any kind. 
+// No warranty of merchantability or fitness of any kind.
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.util;
@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -44,15 +45,19 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
+import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class GroovyASTUtils {
-    public static ClassNode getEnclosingClass(ASTNode node, ASTNodeVisitor astVisitor) {
-        ASTNode current = node;
+    public static ASTNode getEnclosingNodeOfType(ASTNode offsetNode, Class<? extends ASTNode> nodeType,
+            ASTNodeVisitor astVisitor) {
+        ASTNode current = offsetNode;
         while (current != null) {
-            if (current instanceof ClassNode) {
-                return (ClassNode) current;
+            if (nodeType.isInstance(current)) {
+                return current;
             }
             current = astVisitor.getParent(current);
         }
@@ -230,7 +235,7 @@ public class GroovyASTUtils {
         } else if (node instanceof Variable) {
             Variable var = (Variable) node;
             if (var.getName().equals("this")) {
-                ClassNode enclosingClass = getEnclosingClass(node, astVisitor);
+                ClassNode enclosingClass = (ClassNode) getEnclosingNodeOfType(node, ClassNode.class, astVisitor);
                 if (enclosingClass != null) {
                     return enclosingClass;
                 }
@@ -337,5 +342,29 @@ public class GroovyASTUtils {
             }
         }
         return score;
+    }
+
+    public static Range findAddImportRange(ASTNode offsetNode, ASTNodeVisitor astVisitor) {
+        ModuleNode moduleNode = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
+                astVisitor);
+        if (moduleNode == null) {
+            return new Range(new Position(0, 0), new Position(0, 0));
+        }
+        ASTNode afterNode = null;
+        if (afterNode == null) {
+            List<ImportNode> importNodes = moduleNode.getImports();
+            if (importNodes.size() > 0) {
+                afterNode = importNodes.get(importNodes.size() - 1);
+            }
+        }
+        if (afterNode == null) {
+            afterNode = moduleNode.getPackage();
+        }
+        if (afterNode == null) {
+            return new Range(new Position(0, 0), new Position(0, 0));
+        }
+        Range nodeRange = GroovyLanguageServerUtils.astNodeToRange(afterNode);
+        Position position = new Position(nodeRange.getEnd().getLine() + 1, 0);
+        return new Range(position, position);
     }
 }

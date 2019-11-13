@@ -1,20 +1,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2019 Prominic.NET, Inc.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0 
-// 
-// Unless required by applicable law or agreed to in writing, software 
-// distributed under the License is distributed on an "AS IS" BASIS, 
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and 
+// See the License for the specific language governing permissions and
 // limitations under the License
-// 
+//
 // Author: Prominic.NET, Inc.
-// No warranty of merchantability or fitness of any kind. 
+// No warranty of merchantability or fitness of any kind.
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.ast;
@@ -75,6 +75,7 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -282,10 +283,19 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	public void visitSourceUnit(SourceUnit unit) {
 		sourceUnit = unit;
-		unit.getAST().getClasses().forEach(classInUnit -> {
-			visitClass(classInUnit);
-		});
+		visitModule(unit.getAST());
 		sourceUnit = null;
+	}
+
+	public void visitModule(ModuleNode node) {
+		pushASTNode(node);
+		try {
+			node.getClasses().forEach(classInUnit -> {
+				visitClass(classInUnit);
+			});
+		} finally {
+			popASTNode();
+		}
 	}
 
 	// GroovyClassVisitor
@@ -382,15 +392,14 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	// GroovyCodeVisitor
 
-	//this has the same range as a class, which isn't ideal
-	/*public void visitBlockStatement(BlockStatement node) {
+	public void visitBlockStatement(BlockStatement node) {
 		pushASTNode(node);
 		try {
 			super.visitBlockStatement(node);
 		} finally {
 			popASTNode();
 		}
-	}*/
+	}
 
 	public void visitForLoop(ForStatement node) {
 		pushASTNode(node);
