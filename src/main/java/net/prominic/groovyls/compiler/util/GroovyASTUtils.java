@@ -65,6 +65,9 @@ public class GroovyASTUtils {
     }
 
     public static ASTNode getDefinition(ASTNode node, boolean strict, ASTNodeVisitor astVisitor) {
+        if (node == null) {
+            return null;
+        }
         ASTNode parentNode = astVisitor.getParent(node);
         if (node instanceof ExpressionStatement) {
             ExpressionStatement statement = (ExpressionStatement) node;

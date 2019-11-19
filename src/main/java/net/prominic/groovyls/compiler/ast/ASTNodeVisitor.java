@@ -239,6 +239,9 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public ASTNode getParent(ASTNode child) {
+		if (child == null) {
+			return null;
+		}
 		ASTNodeLookupData data = lookup.get(new ASTLookupKey(child));
 		if (data == null) {
 			return null;

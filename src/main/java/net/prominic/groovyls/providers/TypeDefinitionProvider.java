@@ -51,6 +51,9 @@ public class TypeDefinitionProvider {
 		}
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
+		if (offsetNode == null) {
+			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
+		}
 
 		ASTNode definitionNode = GroovyASTUtils.getTypeDefinition(offsetNode, ast);
 		if (definitionNode == null || definitionNode.getLineNumber() == -1 || definitionNode.getColumnNumber() == -1) {
