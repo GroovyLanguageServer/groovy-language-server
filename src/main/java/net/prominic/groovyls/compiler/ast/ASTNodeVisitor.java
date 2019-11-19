@@ -24,10 +24,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -102,6 +100,27 @@ import net.prominic.lsp.utils.Positions;
 import net.prominic.lsp.utils.Ranges;
 
 public class ASTNodeVisitor extends ClassCodeVisitorSupport {
+	private class ASTLookupKey {
+		public ASTLookupKey(ASTNode node) {
+			this.node = node;
+		}
+
+		private ASTNode node;
+
+		@Override
+		public boolean equals(Object o) {
+			//some ASTNode subclasses, like ClassNode, override equals() with
+			//comparisons that are not strict. we need strict.
+			ASTLookupKey other = (ASTLookupKey) o;
+			return node == other.node;
+		}
+
+		@Override
+		public int hashCode() {
+			return node.hashCode();
+		}
+	}
+
 	private class ASTNodeLookupData {
 		public ASTNode parent;
 		public URI uri;
@@ -115,10 +134,9 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	private Stack<ASTNode> stack = new Stack<>();
-	private Set<ASTNode> allNodes = new HashSet<>();
 	private Map<URI, List<ASTNode>> nodesByURI = new HashMap<>();
-	private Set<ClassNode> classNodes = new HashSet<>();
-	private Map<ASTNode, ASTNodeLookupData> lookup = new HashMap<>();
+	private Map<URI, List<ClassNode>> classNodesByURI = new HashMap<>();
+	private Map<ASTLookupKey, ASTNodeLookupData> lookup = new HashMap<>();
 
 	private void pushASTNode(ASTNode node) {
 		boolean isSynthetic = false;
@@ -128,18 +146,14 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 		if (!isSynthetic) {
 			URI uri = sourceUnit.getSource().getURI();
-			if (!nodesByURI.containsKey(uri)) {
-				nodesByURI.put(uri, new ArrayList<>());
-			}
-			List<ASTNode> nodes = nodesByURI.get(uri);
-			nodes.add(node);
+			nodesByURI.get(uri).add(node);
 
 			ASTNodeLookupData data = new ASTNodeLookupData();
 			data.uri = uri;
 			if (stack.size() > 0) {
 				data.parent = stack.lastElement();
 			}
-			lookup.put(node, data);
+			lookup.put(new ASTLookupKey(node), data);
 		}
 
 		stack.add(node);
@@ -150,11 +164,19 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public List<ClassNode> getClassNodes() {
-		return new ArrayList<>(classNodes);
+		List<ClassNode> result = new ArrayList<>();
+		for (List<ClassNode> nodes : classNodesByURI.values()) {
+			result.addAll(nodes);
+		}
+		return result;
 	}
 
 	public List<ASTNode> getNodes() {
-		return new ArrayList<>(allNodes);
+		List<ASTNode> result = new ArrayList<>();
+		for (List<ASTNode> nodes : nodesByURI.values()) {
+			result.addAll(nodes);
+		}
+		return result;
 	}
 
 	public List<ASTNode> getNodes(URI uri) {
@@ -176,13 +198,6 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 			if (node.getLineNumber() == -1) {
 				//can't be the offset node if it has no position
 				//also, do this first because it's the fastest comparison
-				return false;
-			}
-			ASTNodeLookupData lookupData = lookup.get(node);
-			if (lookupData == null) {
-				return false;
-			}
-			if (!lookupData.uri.equals(uri)) {
 				return false;
 			}
 			Range range = GroovyLanguageServerUtils.astNodeToRange(node);
@@ -224,7 +239,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public ASTNode getParent(ASTNode child) {
-		ASTNodeLookupData data = lookup.get(child);
+		ASTNodeLookupData data = lookup.get(new ASTLookupKey(child));
 		if (data == null) {
 			return null;
 		}
@@ -243,7 +258,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public URI getURI(ASTNode node) {
-		ASTNodeLookupData data = lookup.get(node);
+		ASTNodeLookupData data = lookup.get(new ASTLookupKey(node));
 		if (data == null) {
 			return null;
 		}
@@ -252,8 +267,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	public void visitCompilationUnit(CompilationUnit unit) {
 		nodesByURI.clear();
-		allNodes.clear();
-		classNodes.clear();
+		classNodesByURI.clear();
 		lookup.clear();
 		unit.iterator().forEachRemaining(sourceUnit -> {
 			visitSourceUnit(sourceUnit);
@@ -266,11 +280,10 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 			List<ASTNode> nodes = nodesByURI.remove(uri);
 			if (nodes != null) {
 				nodes.forEach(node -> {
-					lookup.remove(node);
+					lookup.remove(new ASTLookupKey(node));
 				});
-				allNodes.removeAll(nodes);
-				classNodes.removeAll(nodes);
 			}
+			classNodesByURI.remove(uri);
 		});
 		unit.iterator().forEachRemaining(sourceUnit -> {
 			URI uri = sourceUnit.getSource().getURI();
@@ -283,8 +296,13 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	public void visitSourceUnit(SourceUnit unit) {
 		sourceUnit = unit;
+		URI uri = sourceUnit.getSource().getURI();
+		nodesByURI.put(uri, new ArrayList<>());
+		classNodesByURI.put(uri, new ArrayList<>());
+		stack.clear();
 		visitModule(unit.getAST());
 		sourceUnit = null;
+		stack.clear();
 	}
 
 	public void visitModule(ModuleNode node) {
@@ -301,7 +319,8 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	// GroovyClassVisitor
 
 	public void visitClass(ClassNode node) {
-		classNodes.add(node);
+		URI uri = sourceUnit.getSource().getURI();
+		classNodesByURI.get(uri).add(node);
 		pushASTNode(node);
 		try {
 			ClassNode unresolvedSuperClass = node.getUnresolvedSuperClass();
