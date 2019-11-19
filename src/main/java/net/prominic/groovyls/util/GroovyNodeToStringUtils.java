@@ -35,6 +35,12 @@ public class GroovyNodeToStringUtils {
 
 	public static String classToString(ClassNode classNode, ASTNodeVisitor ast) {
 		StringBuilder builder = new StringBuilder();
+		String packageName = classNode.getPackageName();
+		if (packageName != null && packageName.length() > 0) {
+			builder.append("package ");
+			builder.append(packageName);
+			builder.append("\n");
+		}
 		if (!classNode.isSyntheticPublic()) {
 			builder.append("public ");
 		}
@@ -48,7 +54,7 @@ public class GroovyNodeToStringUtils {
 		} else {
 			builder.append("class ");
 		}
-		builder.append(classNode.getName());
+		builder.append(classNode.getNameWithoutPackage());
 
 		ClassNode superClass = null;
 		try {
