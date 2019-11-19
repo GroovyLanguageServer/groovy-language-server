@@ -21,6 +21,7 @@ package net.prominic.groovyls.providers;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -102,6 +103,8 @@ public class CompletionProvider {
 			populateItemsFromVariableExpression((VariableExpression) offsetNode, position, items);
 		} else if (offsetNode instanceof ImportNode) {
 			populateItemsFromImportNode((ImportNode) offsetNode, position, items);
+		} else if (offsetNode instanceof ClassNode) {
+			populateItemsFromClassNode((ClassNode) offsetNode, position, items);
 		} else if (offsetNode instanceof MethodNode) {
 			populateItemsFromScope(offsetNode, "", items);
 		} else if (offsetNode instanceof Statement) {
@@ -213,11 +216,26 @@ public class CompletionProvider {
 		items.addAll(classItems);
 	}
 
+	private void populateItemsFromClassNode(ClassNode classNode, Position position, List<CompletionItem> items) {
+		ASTNode parentNode = ast.getParent(classNode);
+		if (!(parentNode instanceof ClassNode)) {
+			return;
+		}
+		ClassNode parentClassNode = (ClassNode) parentNode;
+		Range classRange = GroovyLanguageServerUtils.astNodeToRange(classNode);
+		String className = getMemberName(classNode.getUnresolvedName(), classRange, position);
+		if (classNode.equals(parentClassNode.getUnresolvedSuperClass())) {
+			populateTypes(classNode, className, new HashSet<>(), true, false, false, items);
+		} else if (Arrays.asList(parentClassNode.getUnresolvedInterfaces()).contains(classNode)) {
+			populateTypes(classNode, className, new HashSet<>(), false, true, false, items);
+		}
+	}
+
 	private void populateItemsFromConstructorCallExpression(ConstructorCallExpression constructorCallExpr,
 			Position position, List<CompletionItem> items) {
 		Range typeRange = GroovyLanguageServerUtils.astNodeToRange(constructorCallExpr.getType());
 		String typeName = getMemberName(constructorCallExpr.getType().getNameWithoutPackage(), typeRange, position);
-		populateClasses(constructorCallExpr, typeName, new HashSet<>(), items);
+		populateTypes(constructorCallExpr, typeName, new HashSet<>(), true, false, false, items);
 	}
 
 	private void populateItemsFromVariableExpression(VariableExpression varExpr, Position position,
@@ -329,11 +347,16 @@ public class CompletionProvider {
 			}
 			current = ast.getParent(current);
 		}
-		populateClasses(node, namePrefix, existingNames, items);
+		populateTypes(node, namePrefix, existingNames, items);
 	}
 
-	private void populateClasses(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
+	private void populateTypes(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
 			List<CompletionItem> items) {
+		populateTypes(offsetNode, namePrefix, existingNames, true, true, true, items);
+	}
+
+	private void populateTypes(ASTNode offsetNode, String namePrefix, Set<String> existingNames, boolean includeClasses,
+			boolean includeInterfaces, boolean includeEnums, List<CompletionItem> items) {
 		Range addImportRange = GroovyASTUtils.findAddImportRange(offsetNode, ast);
 
 		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
