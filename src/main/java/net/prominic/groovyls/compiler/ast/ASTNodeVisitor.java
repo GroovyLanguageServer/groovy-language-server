@@ -304,6 +304,18 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		classNodes.add(node);
 		pushASTNode(node);
 		try {
+			ClassNode unresolvedSuperClass = node.getUnresolvedSuperClass();
+			if (unresolvedSuperClass != null && unresolvedSuperClass.getLineNumber() != -1) {
+				pushASTNode(unresolvedSuperClass);
+				popASTNode();
+			}
+			for (ClassNode unresolvedInterface : node.getUnresolvedInterfaces()) {
+				if (unresolvedInterface.getLineNumber() == -1) {
+					continue;
+				}
+				pushASTNode(unresolvedInterface);
+				popASTNode();
+			}
 			super.visitClass(node);
 		} finally {
 			popASTNode();
