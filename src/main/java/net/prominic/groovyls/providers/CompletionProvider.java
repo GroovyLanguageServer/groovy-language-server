@@ -67,6 +67,8 @@ import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 public class CompletionProvider {
 	private ASTNodeVisitor ast;
 	private GroovyClassLoader classLoader;
+	private int maxItemCount = 1000;
+	private boolean isIncomplete = false;
 
 	public CompletionProvider(ASTNodeVisitor ast, GroovyClassLoader classLoader) {
 		this.ast = ast;
@@ -87,6 +89,7 @@ public class CompletionProvider {
 		}
 		ASTNode parentNode = ast.getParent(offsetNode);
 
+		isIncomplete = false;
 		List<CompletionItem> items = new ArrayList<>();
 
 		if (offsetNode instanceof PropertyExpression) {
@@ -111,6 +114,9 @@ public class CompletionProvider {
 			populateItemsFromScope(offsetNode, "", items);
 		}
 
+		if (isIncomplete) {
+			return CompletableFuture.completedFuture(Either.forRight(new CompletionList(true, items)));
+		}
 		return CompletableFuture.completedFuture(Either.forLeft(items));
 	}
 
@@ -347,7 +353,11 @@ public class CompletionProvider {
 			}
 			current = ast.getParent(current);
 		}
-		populateTypes(node, namePrefix, existingNames, items);
+		if (namePrefix.length() == 0) {
+			isIncomplete = true;
+		} else {
+			populateTypes(node, namePrefix, existingNames, items);
+		}
 	}
 
 	private void populateTypes(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
@@ -366,6 +376,13 @@ public class CompletionProvider {
 				.collect(Collectors.toList());
 
 		List<CompletionItem> localClassItems = ast.getClassNodes().stream().filter(classNode -> {
+			if (isIncomplete) {
+				return false;
+			}
+			if (existingNames.size() >= maxItemCount) {
+				isIncomplete = true;
+				return false;
+			}
 			String classNameWithoutPackage = classNode.getNameWithoutPackage();
 			String className = classNode.getName();
 			if (classNameWithoutPackage.startsWith(namePrefix) && !existingNames.contains(className)) {
@@ -397,6 +414,13 @@ public class CompletionProvider {
 		List<ClassInfo> classes = scanResult.getAllClasses();
 
 		List<CompletionItem> classItems = classes.stream().filter(classInfo -> {
+			if (isIncomplete) {
+				return false;
+			}
+			if (existingNames.size() >= maxItemCount) {
+				isIncomplete = true;
+				return false;
+			}
 			String className = classInfo.getName();
 			String classNameWithoutPackage = classInfo.getSimpleName();
 			if (classNameWithoutPackage.startsWith(namePrefix) && !existingNames.contains(className)) {
