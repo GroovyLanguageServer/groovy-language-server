@@ -303,7 +303,10 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		nodesByURI.put(uri, new ArrayList<>());
 		classNodesByURI.put(uri, new ArrayList<>());
 		stack.clear();
-		visitModule(unit.getAST());
+		ModuleNode moduleNode = unit.getAST();
+		if (moduleNode != null) {
+			visitModule(moduleNode);
+		}
 		sourceUnit = null;
 		stack.clear();
 	}
