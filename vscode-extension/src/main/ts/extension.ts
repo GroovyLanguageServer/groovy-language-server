@@ -88,28 +88,6 @@ export function deactivate() {
 }
 
 function startLanguageServer() {
-  /*if (vscode.workspace.workspaceFolders === undefined) {
-    vscode.window
-      .showInformationMessage(
-        MISSING_WORKSPACE_ROOT_ERROR,
-        LABEL_OPEN_FOLDER,
-        LABEL_OPEN_WORKSPACE
-      )
-      .then(action => {
-        switch (action) {
-          case LABEL_OPEN_WORKSPACE: {
-            vscode.commands.executeCommand("workbench.action.openWorkspace");
-            break;
-          }
-          case LABEL_OPEN_FOLDER: {
-            vscode.commands.executeCommand("workbench.action.files.openFolder");
-            break;
-          }
-        }
-      });
-    return;
-  }*/
-
   vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window },
     progress => {
