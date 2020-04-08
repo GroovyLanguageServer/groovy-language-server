@@ -1,5 +1,5 @@
 plugins {
-  id "com.github.johnrengelman.shadow" version "4.0.3"
+  id "com.github.johnrengelman.shadow" version "5.2.0"
   id "java"
 }
 
@@ -29,7 +29,7 @@ repositories  {
 dependencies {
   compile "org.eclipse.lsp4j:org.eclipse.lsp4j:0.8.1"
   compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.8.1"
-  compile "org.codehaus.groovy:groovy-all:2.5.8"
+  compile "org.codehaus.groovy:groovy-all:2.5.10"
   compile "com.google.code.gson:gson:2.8.2"
   compile "io.github.classgraph:classgraph:4.8.53"
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.5.2"
