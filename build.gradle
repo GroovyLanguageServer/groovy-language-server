@@ -3,9 +3,9 @@ plugins {
   id "java"
 }
 
-compileJava {
-  sourceCompatibility = "1.8"
-  targetCompatibility = "1.8"
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 test {
@@ -27,13 +27,13 @@ repositories  {
 }
 
 dependencies {
-  compile "org.eclipse.lsp4j:org.eclipse.lsp4j:0.8.1"
-  compile "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.8.1"
-  compile "org.codehaus.groovy:groovy-all:2.5.10"
-  compile "com.google.code.gson:gson:2.8.2"
-  compile "io.github.classgraph:classgraph:4.8.53"
+  implementation "org.eclipse.lsp4j:org.eclipse.lsp4j:0.8.1"
+  implementation "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.8.1"
+  implementation "org.codehaus.groovy:groovy-all:2.5.10"
+  implementation "com.google.code.gson:gson:2.8.2"
+  implementation "io.github.classgraph:classgraph:4.8.53"
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.5.2"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.5.2"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.5.2"
 }
 
 // assuming that Moonshine-IDE is checked out in a folder that has the same
