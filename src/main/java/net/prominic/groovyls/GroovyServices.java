@@ -42,6 +42,7 @@ import com.google.gson.JsonObject;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.Phases;
@@ -448,6 +449,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			compilationUnit.compile(Phases.CANONICALIZATION);
 		} catch (MultipleCompilationErrorsException e) {
 			// ignore
+		} catch (CompilationFailedException e) {
+			// ignore
 		} catch (GroovyBugError e) {
 			System.err.println("Unexpected exception in language server when compiling Groovy.");
 			e.printStackTrace(System.err);
@@ -462,8 +465,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private Set<PublishDiagnosticsParams> handleErrorCollector(ErrorCollector collector) {
 		Map<URI, List<Diagnostic>> diagnosticsByFile = new HashMap<>();
 
-		@SuppressWarnings("unchecked")
-		List<Message> errors = collector.getErrors();
+		List<? extends Message> errors = collector.getErrors();
 		if (errors != null) {
 			errors.stream().filter((Object message) -> message instanceof SyntaxErrorMessage)
 					.forEach((Object message) -> {

@@ -123,7 +123,10 @@ public class GroovyASTUtils {
         if (definitionNode == null) {
             return null;
         }
-        if (definitionNode instanceof MethodNode) {
+        if (definitionNode instanceof ClassNode) {
+            ClassNode classNode = (ClassNode) definitionNode;
+            return tryToResolveOriginalClassNode(classNode, true, astVisitor);
+        } else if (definitionNode instanceof MethodNode) {
             MethodNode method = (MethodNode) definitionNode;
             return tryToResolveOriginalClassNode(method.getReturnType(), true, astVisitor);
         } else if (definitionNode instanceof Variable) {

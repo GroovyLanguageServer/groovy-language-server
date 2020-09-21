@@ -102,7 +102,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testLocalVariableTypeDefinitionFromDeclaration() throws Exception {
-		Path filePath = srcRoot.resolve("Definitions.groovy");
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -127,7 +127,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testLocalVariableTypeDefinitionFromAssignment() throws Exception {
-		Path filePath = srcRoot.resolve("Definitions.groovy");
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -153,7 +153,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testLocalVariableTypeDefinitionFromMethodCall() throws Exception {
-		Path filePath = srcRoot.resolve("Definitions.groovy");
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -179,15 +179,66 @@ class GroovyServicesTypeDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
 	}
 
-	// --- member variables
+	// --- member fields
 
 	@Test
-	void testMemberVariableTypeDefinitionFromDeclaration() throws Exception {
-		Path filePath = srcRoot.resolve("Definitions.groovy");
+	void testMemberFieldTypeDefinitionFromDeclaration() throws Exception {
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
-		contents.append("  TypeDefinitions memberVar\n");
+		contents.append("  public TypeDefinitions memberField\n"); //fields must have access modifier
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(1, 27);
+		List<? extends Location> locations = services.typeDefinition(new TypeDefinitionParams(textDocument, position))
+				.get().getLeft();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(2, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
+	}
+
+	@Test
+	void testMemberFieldTypeDefinitionFromAssignment() throws Exception {
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class TypeDefinitions {\n");
+		contents.append("  public TypeDefinitions memberField\n"); //fields must have access modifier
+		contents.append("  public TypeDefinitions() {\n");
+		contents.append("    memberField = null\n");
+		contents.append("  }\n");
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 6);
+		List<? extends Location> locations = services.typeDefinition(new TypeDefinitionParams(textDocument, position))
+				.get().getLeft();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(5, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
+	}
+
+	// --- member properties
+
+	@Test
+	void testMemberPropertyTypeDefinitionFromDeclaration() throws Exception {
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class TypeDefinitions {\n");
+		contents.append("  TypeDefinitions memberProp\n"); //properties must not have access modifier
 		contents.append("}");
 		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
@@ -205,14 +256,14 @@ class GroovyServicesTypeDefinitionTests {
 	}
 
 	@Test
-	void testMemberVariableTypeDefinitionFromAssignment() throws Exception {
-		Path filePath = srcRoot.resolve("Definitions.groovy");
+	void testMemberPropertyTypeDefinitionFromAssignment() throws Exception {
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
-		contents.append("  TypeDefinitions memberVar\n");
+		contents.append("  TypeDefinitions memberProp\n"); //properties must not have access modifier
 		contents.append("  public TypeDefinitions() {\n");
-		contents.append("    memberVar = null\n");
+		contents.append("    memberProp = null\n");
 		contents.append("  }\n");
 		contents.append("}");
 		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
@@ -234,7 +285,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testMemberMethodTypeDefinitionFromDeclaration() throws Exception {
-		Path filePath = srcRoot.resolve("Definitions.groovy");
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");
@@ -258,7 +309,7 @@ class GroovyServicesTypeDefinitionTests {
 
 	@Test
 	void testMemberMethodTypeDefinitionFromCall() throws Exception {
-		Path filePath = srcRoot.resolve("Definitions.groovy");
+		Path filePath = srcRoot.resolve("TypeDefinitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class TypeDefinitions {\n");

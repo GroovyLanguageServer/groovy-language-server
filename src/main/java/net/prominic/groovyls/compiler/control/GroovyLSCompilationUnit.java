@@ -23,7 +23,6 @@ import java.security.CodeSource;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -50,19 +49,7 @@ public class GroovyLSCompilationUnit extends CompilationUnit {
 
 	public void removeSources(Collection<SourceUnit> sourceUnitsToRemove) {
 		for (SourceUnit sourceUnit : sourceUnitsToRemove) {
-			if (sourceUnit.getAST() != null) {
-				List<String> sourceUnitClassNames = sourceUnit.getAST().getClasses().stream()
-						.map(classNode -> classNode.getName()).collect(Collectors.toList());
-				generatedClasses.removeIf(groovyClass -> sourceUnitClassNames.contains(groovyClass.getName()));
-				for (String className : sourceUnitClassNames) {
-					summariesByPublicClassName.remove(className);
-					classSourcesByPublicClassName.remove(className);
-				}
-			}
-
-			summariesBySourceName.remove(sourceUnit.getName());
 			sources.remove(sourceUnit.getName());
-			names.remove(sourceUnit.getName());
 		}
 		//keep existing modules from other source units
 		List<ModuleNode> modules = ast.getModules();

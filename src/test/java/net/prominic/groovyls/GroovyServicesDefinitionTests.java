@@ -204,20 +204,20 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(16, location.getRange().getEnd().getCharacter());
 	}
 
-	// --- member variables
+	// --- member fields
 
 	@Test
-	void testMemberVariableDefinitionFromDeclaration() throws Exception {
+	void testMemberFieldDefinitionFromDeclaration() throws Exception {
 		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class Definitions {\n");
-		contents.append("  public int memberVar\n");
-		contents.append("}\n");
+		contents.append("  public int memberField\n"); // fields must have access modifier
+		contents.append("}");
 		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
-		Position position = new Position(1, 18);
+		Position position = new Position(1, 15);
 		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
 				.getLeft();
 		Assertions.assertEquals(1, locations.size());
@@ -226,18 +226,18 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getStart().getLine());
 		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
 		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(22, location.getRange().getEnd().getCharacter());
+		Assertions.assertEquals(8, location.getRange().getEnd().getCharacter());
 	}
 
 	@Test
-	void testMemberVariableDefinitionFromAssignment() throws Exception {
+	void testMemberFieldDefinitionFromAssignment() throws Exception {
 		Path filePath = srcRoot.resolve("Definitions.groovy");
 		String uri = filePath.toUri().toString();
 		StringBuilder contents = new StringBuilder();
 		contents.append("class Definitions {\n");
-		contents.append("  public int memberVar\n");
+		contents.append("  public int memberField\n"); // fields must have access modifier
 		contents.append("  public Definitions() {\n");
-		contents.append("    memberVar = 123\n");
+		contents.append("    memberField = 123\n");
 		contents.append("  }\n");
 		contents.append("}\n");
 		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
@@ -252,7 +252,58 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getStart().getLine());
 		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
 		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(22, location.getRange().getEnd().getCharacter());
+		Assertions.assertEquals(8, location.getRange().getEnd().getCharacter());
+	}
+
+	// --- member properties
+
+	@Test
+	void testMemberPropertyDefinitionFromDeclaration() throws Exception {
+		Path filePath = srcRoot.resolve("Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  int memberProp\n"); // properties must not have access modifier
+		contents.append("}");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(1, 8);
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(1, location.getRange().getStart().getLine());
+		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(16, location.getRange().getEnd().getCharacter());
+	}
+
+	@Test
+	void testMemberPropertyDefinitionFromAssignment() throws Exception {
+		Path filePath = srcRoot.resolve("Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class Definitions {\n");
+		contents.append("  int memberProp\n"); // properties must not have access modifier
+		contents.append("  public Definitions() {\n");
+		contents.append("    memberProp = 123\n");
+		contents.append("  }\n");
+		contents.append("}\n");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(3, 6);
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(1, location.getRange().getStart().getLine());
+		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(5, location.getRange().getEnd().getCharacter());
 	}
 
 	// --- member methods
@@ -537,6 +588,6 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(5, location.getRange().getStart().getLine());
 		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
 		Assertions.assertEquals(5, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(21, location.getRange().getEnd().getCharacter());
+		Assertions.assertEquals(8, location.getRange().getEnd().getCharacter());
 	}
 }

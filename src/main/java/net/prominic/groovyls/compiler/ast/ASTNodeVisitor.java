@@ -230,6 +230,46 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 				}
 				return -1;
 			}
+
+			ASTNode parent1 = getParent(n1);
+			if (parent1 instanceof PropertyExpression) {
+				ASTNode parent2 = getParent(n2);
+				if (parent1 == parent2) {
+					PropertyExpression propExpr = (PropertyExpression) parent1;
+					if (propExpr.isImplicitThis()) {
+						if (n1 instanceof VariableExpression) {
+							VariableExpression varExpr = (VariableExpression) n2;
+							if ("this".equals(varExpr.getName())) {
+								return 1;
+							}
+						} else if (n2 instanceof VariableExpression) {
+							VariableExpression varExpr = (VariableExpression) n2;
+							if ("this".equals(varExpr.getName())) {
+								return -1;
+							}
+						}
+					}
+				}
+
+			} else if (parent1 instanceof MethodCallExpression) {
+				ASTNode parent2 = getParent(n2);
+				if (parent1 == parent2) {
+					MethodCallExpression callExpr = (MethodCallExpression) parent1;
+					if (callExpr.isImplicitThis()) {
+						if (n1 instanceof VariableExpression) {
+							VariableExpression varExpr = (VariableExpression) n2;
+							if ("this".equals(varExpr.getName())) {
+								return 1;
+							}
+						} else if (n2 instanceof VariableExpression) {
+							VariableExpression varExpr = (VariableExpression) n2;
+							if ("this".equals(varExpr.getName())) {
+								return -1;
+							}
+						}
+					}
+				}
+			}
 			return 0;
 		}).collect(Collectors.toList());
 		if (foundNodes.size() == 0) {
@@ -510,7 +550,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	protected void visitEmptyStatement(EmptyStatement node) {
+	public void visitEmptyStatement(EmptyStatement node) {
 		pushASTNode(node);
 		try {
 			super.visitEmptyStatement(node);
