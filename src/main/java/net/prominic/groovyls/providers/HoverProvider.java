@@ -20,8 +20,6 @@
 package net.prominic.groovyls.providers;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.codehaus.groovy.ast.ASTNode;
@@ -29,10 +27,10 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Variable;
 import org.eclipse.lsp4j.Hover;
-import org.eclipse.lsp4j.MarkedString;
+import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
@@ -47,7 +45,8 @@ public class HoverProvider {
 
 	public CompletableFuture<Hover> provideHover(TextDocumentIdentifier textDocument, Position position) {
 		Hover hover = new Hover();
-		List<Either<String, MarkedString>> contents = new ArrayList<>();
+		MarkupContent contents = new MarkupContent();
+		contents.setKind(MarkupKind.MARKDOWN);
 		hover.setContents(contents);
 
 		if (ast == null) {
@@ -72,7 +71,7 @@ public class HoverProvider {
 			return CompletableFuture.completedFuture(hover);
 		}
 
-		contents.add(Either.forRight(new MarkedString("groovy", content)));
+		contents.setValue("```groovy\n" + content + "\n```");
 		return CompletableFuture.completedFuture(hover);
 	}
 
