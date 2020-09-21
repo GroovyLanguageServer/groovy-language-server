@@ -76,11 +76,12 @@ public class FileContentsTracker {
 		if (range == null) {
 			openFiles.put(uri, change.getText());
 		} else {
-			int offset = Positions.getOffset(oldText, change.getRange().getStart());
+			int offsetStart = Positions.getOffset(oldText, change.getRange().getStart());
+			int offsetEnd = Positions.getOffset(oldText, change.getRange().getEnd());
 			StringBuilder builder = new StringBuilder();
-			builder.append(oldText.substring(0, offset));
+			builder.append(oldText.substring(0, offsetStart));
 			builder.append(change.getText());
-			builder.append(oldText.substring(offset + change.getRangeLength()));
+			builder.append(oldText.substring(offsetEnd));
 			openFiles.put(uri, builder.toString());
 		}
 		changedFiles.add(uri);
