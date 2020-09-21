@@ -1,20 +1,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2019 Prominic.NET, Inc.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0 
-// 
-// Unless required by applicable law or agreed to in writing, software 
-// distributed under the License is distributed on an "AS IS" BASIS, 
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and 
+// See the License for the specific language governing permissions and
 // limitations under the License
-// 
+//
 // Author: Prominic.NET, Inc.
-// No warranty of merchantability or fitness of any kind. 
+// No warranty of merchantability or fitness of any kind.
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls;
@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.MessageActionItem;
@@ -34,7 +35,6 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.ShowMessageRequestParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
-import org.eclipse.lsp4j.TextDocumentPositionParams;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -114,8 +114,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 14);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -140,8 +140,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -166,8 +166,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -193,8 +193,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 18);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -218,8 +218,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(1, 18);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -244,8 +244,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -269,8 +269,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(1, 16);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -295,8 +295,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -319,8 +319,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(0, 8);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -344,8 +344,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 10);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -369,8 +369,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 6);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -395,8 +395,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 6);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -427,8 +427,8 @@ class GroovyServicesDefinitionTests {
 
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri2);
 		Position position = new Position(0, 10);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -453,8 +453,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(1, 27);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -477,8 +477,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(1, 33);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -502,8 +502,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 6);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());
@@ -529,8 +529,8 @@ class GroovyServicesDefinitionTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(3, 15);
-		List<? extends Location> locations = services.definition(new TextDocumentPositionParams(textDocument, position))
-				.get().getLeft();
+		List<? extends Location> locations = services.definition(new DefinitionParams(textDocument, position)).get()
+				.getLeft();
 		Assertions.assertEquals(1, locations.size());
 		Location location = locations.get(0);
 		Assertions.assertEquals(uri, location.getUri());

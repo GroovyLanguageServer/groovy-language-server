@@ -1,20 +1,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2019 Prominic.NET, Inc.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-// 
-// http://www.apache.org/licenses/LICENSE-2.0 
-// 
-// Unless required by applicable law or agreed to in writing, software 
-// distributed under the License is distributed on an "AS IS" BASIS, 
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and 
+// See the License for the specific language governing permissions and
 // limitations under the License
-// 
+//
 // Author: Prominic.NET, Inc.
-// No warranty of merchantability or fitness of any kind. 
+// No warranty of merchantability or fitness of any kind.
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls;
@@ -33,10 +33,10 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.ShowMessageRequestParams;
 import org.eclipse.lsp4j.SignatureHelp;
+import org.eclipse.lsp4j.SignatureHelpParams;
 import org.eclipse.lsp4j.SignatureInformation;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
-import org.eclipse.lsp4j.TextDocumentPositionParams;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -115,8 +115,7 @@ class GroovyServicesSignatureHelpTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 11);
-		SignatureHelp signatureHelp = services.signatureHelp(new TextDocumentPositionParams(textDocument, position))
-				.get();
+		SignatureHelp signatureHelp = services.signatureHelp(new SignatureHelpParams(textDocument, position)).get();
 		List<SignatureInformation> signatures = signatureHelp.getSignatures();
 		Assertions.assertEquals(1, signatures.size());
 		SignatureInformation signature = signatures.get(0);
@@ -144,8 +143,7 @@ class GroovyServicesSignatureHelpTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 11);
-		SignatureHelp signatureHelp = services.signatureHelp(new TextDocumentPositionParams(textDocument, position))
-				.get();
+		SignatureHelp signatureHelp = services.signatureHelp(new SignatureHelpParams(textDocument, position)).get();
 		List<SignatureInformation> signatures = signatureHelp.getSignatures();
 		Assertions.assertEquals(1, signatures.size());
 		SignatureInformation signature = signatures.get(0);
@@ -175,8 +173,7 @@ class GroovyServicesSignatureHelpTests {
 		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 		Position position = new Position(2, 15);
-		SignatureHelp signatureHelp = services.signatureHelp(new TextDocumentPositionParams(textDocument, position))
-				.get();
+		SignatureHelp signatureHelp = services.signatureHelp(new SignatureHelpParams(textDocument, position)).get();
 		List<SignatureInformation> signatures = signatureHelp.getSignatures();
 		Assertions.assertEquals(1, signatures.size());
 		SignatureInformation signature = signatures.get(0);

@@ -51,6 +51,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
@@ -62,6 +63,7 @@ import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
@@ -70,10 +72,11 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.SignatureHelp;
+import org.eclipse.lsp4j.SignatureHelpParams;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.eclipse.lsp4j.TextDocumentPositionParams;
+import org.eclipse.lsp4j.TypeDefinitionParams;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.WorkspaceSymbolParams;
@@ -202,7 +205,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	// --- REQUESTS
 
 	@Override
-	public CompletableFuture<Hover> hover(TextDocumentPositionParams params) {
+	public CompletableFuture<Hover> hover(HoverParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		recompileIfContextChanged(uri);
 
@@ -267,7 +270,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
-			TextDocumentPositionParams params) {
+			DefinitionParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		recompileIfContextChanged(uri);
 
@@ -276,7 +279,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	}
 
 	@Override
-	public CompletableFuture<SignatureHelp> signatureHelp(TextDocumentPositionParams params) {
+	public CompletableFuture<SignatureHelp> signatureHelp(SignatureHelpParams params) {
 		TextDocumentIdentifier textDocument = params.getTextDocument();
 		Position position = params.getPosition();
 		URI uri = URI.create(textDocument.getUri());
@@ -322,7 +325,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 	@Override
 	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> typeDefinition(
-			TextDocumentPositionParams params) {
+			TypeDefinitionParams params) {
 		URI uri = URI.create(params.getTextDocument().getUri());
 		recompileIfContextChanged(uri);
 
