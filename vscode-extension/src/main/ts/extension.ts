@@ -28,6 +28,8 @@ import {
 
 const MISSING_JAVA_ERROR =
   "Could not locate valid JDK. To configure JDK manually, use the groovy.java.home setting.";
+const INVALID_JAVA_ERROR =
+    "The groovy.java.home setting does not point to a valid JDK.";
 const INITIALIZING_MESSAGE = "Initializing Groovy language server...";
 const RELOAD_WINDOW_MESSAGE =
   "To apply new settings for Groovy, please reload the window.";
@@ -39,6 +41,7 @@ let javaPath: string|null = null;
 
 function onDidChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
   if (event.affectsConfiguration("groovy.java.home")) {
+    javaPath = findJava();
     //we're going to try to kill the language server and then restart
     //it with the new settings
     restartLanguageServer();
@@ -101,7 +104,15 @@ function startLanguageServer() {
         }
         if (!javaPath) {
           resolve();
-          vscode.window.showErrorMessage(MISSING_JAVA_ERROR);
+          let settingsJavaHome = vscode.workspace
+            .getConfiguration("groovy")
+            .get("java.home") as string;
+          if(settingsJavaHome) {
+            vscode.window.showErrorMessage(INVALID_JAVA_ERROR);
+          }
+          else {
+            vscode.window.showErrorMessage(MISSING_JAVA_ERROR);
+          }
           return;
         }
         progress.report({ message: INITIALIZING_MESSAGE });
