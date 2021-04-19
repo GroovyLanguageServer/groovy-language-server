@@ -44,34 +44,33 @@ public class HoverProvider {
 	}
 
 	public CompletableFuture<Hover> provideHover(TextDocumentIdentifier textDocument, Position position) {
-		Hover hover = new Hover();
-		MarkupContent contents = new MarkupContent();
-		contents.setKind(MarkupKind.MARKDOWN);
-		hover.setContents(contents);
-
 		if (ast == null) {
 			//this shouldn't happen, but let's avoid an exception if something
 			//goes terribly wrong.
-			return CompletableFuture.completedFuture(hover);
+			return CompletableFuture.completedFuture(null);
 		}
 
 		URI uri = URI.create(textDocument.getUri());
 		ASTNode offsetNode = ast.getNodeAtLineAndColumn(uri, position.getLine(), position.getCharacter());
 		if (offsetNode == null) {
-			return CompletableFuture.completedFuture(hover);
+			return CompletableFuture.completedFuture(null);
 		}
 
 		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, false, ast);
 		if (definitionNode == null) {
-			return CompletableFuture.completedFuture(hover);
+			return CompletableFuture.completedFuture(null);
 		}
 
 		String content = getContent(definitionNode);
 		if (content == null) {
-			return CompletableFuture.completedFuture(hover);
+			return CompletableFuture.completedFuture(null);
 		}
 
+		MarkupContent contents = new MarkupContent();
+		contents.setKind(MarkupKind.MARKDOWN);
 		contents.setValue("```groovy\n" + content + "\n```");
+		Hover hover = new Hover();
+		hover.setContents(contents);
 		return CompletableFuture.completedFuture(hover);
 	}
 
