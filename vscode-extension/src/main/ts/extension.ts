@@ -153,7 +153,7 @@ function startLanguageServer() {
           executable,
           clientOptions
         );
-        languageClient.onReady().then(resolve, (reason) => {
+        languageClient.onReady().then(resolve, (reason: any) => {
           resolve();
           vscode.window.showErrorMessage(STARTUP_ERROR);
         });
