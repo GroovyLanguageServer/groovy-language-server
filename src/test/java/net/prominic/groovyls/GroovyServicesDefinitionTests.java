@@ -226,7 +226,7 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getStart().getLine());
 		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
 		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(8, location.getRange().getEnd().getCharacter());
+		Assertions.assertEquals(24, location.getRange().getEnd().getCharacter());
 	}
 
 	@Test
@@ -252,7 +252,7 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getStart().getLine());
 		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
 		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(8, location.getRange().getEnd().getCharacter());
+		Assertions.assertEquals(24, location.getRange().getEnd().getCharacter());
 	}
 
 	// --- member properties
@@ -303,7 +303,7 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(1, location.getRange().getStart().getLine());
 		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
 		Assertions.assertEquals(1, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(5, location.getRange().getEnd().getCharacter());
+		Assertions.assertEquals(16, location.getRange().getEnd().getCharacter());
 	}
 
 	// --- member methods
@@ -588,6 +588,6 @@ class GroovyServicesDefinitionTests {
 		Assertions.assertEquals(5, location.getRange().getStart().getLine());
 		Assertions.assertEquals(2, location.getRange().getStart().getCharacter());
 		Assertions.assertEquals(5, location.getRange().getEnd().getLine());
-		Assertions.assertEquals(8, location.getRange().getEnd().getCharacter());
+		Assertions.assertEquals(21, location.getRange().getEnd().getCharacter());
 	}
 }
