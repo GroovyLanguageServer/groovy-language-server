@@ -24,7 +24,7 @@ import {
   LanguageClient,
   LanguageClientOptions,
   Executable,
-} from "vscode-languageclient";
+} from "vscode-languageclient/node";
 
 const MISSING_JAVA_ERROR =
   "Could not locate valid JDK. To configure JDK manually, use the groovy.java.home setting.";

@@ -164,7 +164,7 @@ public class CompletionProvider {
 		}).map(classNode -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classNode.getName());
-			item.setTextEdit(new TextEdit(importRange, classNode.getName()));
+			item.setTextEdit(Either.forLeft(new TextEdit(importRange, classNode.getName())));
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
 			if (classNode.getNameWithoutPackage().startsWith(importText)) {
 				item.setSortText(classNode.getNameWithoutPackage());
@@ -189,7 +189,7 @@ public class CompletionProvider {
 		}).map(packageInfo -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(packageInfo.getName());
-			item.setTextEdit(new TextEdit(importRange, packageInfo.getName()));
+			item.setTextEdit(Either.forLeft(new TextEdit(importRange, packageInfo.getName())));
 			item.setKind(CompletionItemKind.Module);
 			return item;
 		}).collect(Collectors.toList());
@@ -212,7 +212,7 @@ public class CompletionProvider {
 		}).map(classInfo -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classInfo.getName());
-			item.setTextEdit(new TextEdit(importRange, classInfo.getName()));
+			item.setTextEdit(Either.forLeft(new TextEdit(importRange, classInfo.getName())));
 			item.setKind(classInfoToCompletionItemKind(classInfo));
 			if (classInfo.getSimpleName().startsWith(importText)) {
 				item.setSortText(classInfo.getSimpleName());
