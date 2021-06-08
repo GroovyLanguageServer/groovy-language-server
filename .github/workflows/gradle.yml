@@ -16,5 +16,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Build with Gradle
+      - name: Build language server with Gradle
+        run: ./gradlew build
+      - name: Build VSCode extension with Gradle
+        working-directory: samples/vscode-extension
         run: ./gradlew build
