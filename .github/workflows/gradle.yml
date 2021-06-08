@@ -19,5 +19,5 @@ jobs:
       - name: Build language server with Gradle
         run: ./gradlew build
       - name: Build VSCode extension with Gradle
-        working-directory: samples/vscode-extension
+        working-directory: vscode-extension
         run: ./gradlew build
