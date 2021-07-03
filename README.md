@@ -1,18 +1,6 @@
-# Groovy Language Server
+# Groovy IntelliSense for Visual Studio Code
 
-A [language server](https://microsoft.github.io/language-server-protocol/) for [Groovy](http://groovy-lang.org/).
-
-The following language server protocol requests are currently supported:
-
-- completion
-- definition
-- documentSymbol
-- hover
-- references
-- rename
-- signatureHelp
-- symbol
-- typeDefinition
+A WIP extension for [Visual Studio Code](https://code.visualstudio.com/) based on the [Groovy Language Server](https://github.com/prominic/groovy-language-server).
 
 ## Build
 
@@ -22,14 +10,9 @@ To build from the command line, run the following command:
 ./gradlew build
 ```
 
-This will create _build/libs/groovy-language-server-all.jar_.
+The extension will be created in the _build_ folder.
 
-## Run
-
-To run the language server, use the following command:
-
-```sh
-java -jar groovy-language-server-all.jar
-```
-
-Language server protocol messages are passed using standard I/O.
+## Acknowledgements
+* [Groovy Language Server](https://github.com/prominic/groovy-language-server)
+* [Moonshine IDE](https://moonshine-ide.com)
+<!-- * [Best-README-Template](https://github.com/othneildrew/Best-README-Template) -->
