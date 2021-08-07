@@ -26,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -105,6 +107,11 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 
 	protected CompilerConfiguration getConfiguration() {
 		CompilerConfiguration config = new CompilerConfiguration();
+
+		Map<String, Boolean> options = new HashMap<String, Boolean>();
+		options.put(CompilerConfiguration.GROOVYDOC, true);
+
+		config.setOptimizationOptions(options);
 
 		List<String> classpathList = new ArrayList<>();
 		getClasspathList(classpathList);
