@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Variable;
@@ -34,6 +35,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
+import net.prominic.groovyls.util.GroovyDocUtils;
 import net.prominic.groovyls.util.GroovyNodeToStringUtils;
 
 public class HoverProvider {
@@ -46,6 +48,7 @@ public class HoverProvider {
 	public CompletableFuture<Hover> provideHover(TextDocumentIdentifier textDocument, Position position) {
 		Hover hover = new Hover();
 		MarkupContent contents = new MarkupContent();
+		StringBuilder foundContent = new StringBuilder();
 		contents.setKind(MarkupKind.MARKDOWN);
 		hover.setContents(contents);
 
@@ -66,16 +69,31 @@ public class HoverProvider {
 			return CompletableFuture.completedFuture(hover);
 		}
 
-		String content = getContent(definitionNode);
-		if (content == null) {
+		String nodeSignature = getNodeSignature(definitionNode);
+		if (nodeSignature == null) {
 			return CompletableFuture.completedFuture(hover);
 		}
 
-		contents.setValue("```groovy\n" + content + "\n```");
+		foundContent.append("```groovy\n");
+		foundContent.append(nodeSignature + "\n");
+		foundContent.append("```\n");
+
+		if (definitionNode instanceof AnnotatedNode) {
+			AnnotatedNode docNode = (AnnotatedNode) definitionNode;
+			String docString = GroovyDocUtils.getDocString(docNode);
+			if (docString != null) {
+				foundContent.append(docString);
+			}
+			
+		}
+
+		contents.setValue(foundContent.toString());
+
+		hover.setContents(contents);
 		return CompletableFuture.completedFuture(hover);
 	}
 
-	private String getContent(ASTNode hoverNode) {
+	private String getNodeSignature(ASTNode hoverNode) {
 		if (hoverNode instanceof ClassNode) {
 			ClassNode classNode = (ClassNode) hoverNode;
 			return GroovyNodeToStringUtils.classToString(classNode, ast);
