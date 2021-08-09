@@ -20,7 +20,6 @@
 package net.prominic.groovyls.util;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -28,7 +27,6 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 
-import groovy.lang.groovydoc.Groovydoc;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
 
@@ -69,8 +67,6 @@ public class GroovyNodeToStringUtils {
 			builder.append(superClass.getNameWithoutPackage());
 		}
 
-		addDocString(classNode, builder);
-
 		return builder.toString();
 	}
 
@@ -80,8 +76,6 @@ public class GroovyNodeToStringUtils {
 		builder.append("(");
 		builder.append(parametersToString(constructorNode.getParameters(), ast));
 		builder.append(")");
-
-		addDocString(constructorNode, builder);
 
 		return builder.toString();
 	}
@@ -115,8 +109,6 @@ public class GroovyNodeToStringUtils {
 		builder.append("(");
 		builder.append(parametersToString(methodNode.getParameters(), ast));
 		builder.append(")");
-
-		addDocString(methodNode, builder);
 
 		return builder.toString();
 	}
@@ -167,13 +159,4 @@ public class GroovyNodeToStringUtils {
 		return builder.toString();
 	}
 
-	public static void addDocString(AnnotatedNode node, StringBuilder builder) {
-
-		Groovydoc docstring = node.getGroovydoc();
-
-		if(docstring.isPresent()) {
-			builder.append("\n");
-			builder.append(docstring.getContent());
-		}
-	}
 }
