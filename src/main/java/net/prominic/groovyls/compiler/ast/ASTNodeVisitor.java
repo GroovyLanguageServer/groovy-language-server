@@ -510,7 +510,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	protected void visitEmptyStatement(EmptyStatement node) {
+	public void visitEmptyStatement(EmptyStatement node) {
 		pushASTNode(node);
 		try {
 			super.visitEmptyStatement(node);

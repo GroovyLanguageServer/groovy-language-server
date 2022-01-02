@@ -19,19 +19,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.control;
 
-import java.security.CodeSource;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.tools.GroovyClass;
 
-import groovy.lang.GroovyClassLoader;
+import java.security.CodeSource;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class GroovyLSCompilationUnit extends CompilationUnit {
 
@@ -53,16 +53,10 @@ public class GroovyLSCompilationUnit extends CompilationUnit {
 			if (sourceUnit.getAST() != null) {
 				List<String> sourceUnitClassNames = sourceUnit.getAST().getClasses().stream()
 						.map(classNode -> classNode.getName()).collect(Collectors.toList());
+				final List<GroovyClass> generatedClasses = getClasses();
 				generatedClasses.removeIf(groovyClass -> sourceUnitClassNames.contains(groovyClass.getName()));
-				for (String className : sourceUnitClassNames) {
-					summariesByPublicClassName.remove(className);
-					classSourcesByPublicClassName.remove(className);
-				}
 			}
-
-			summariesBySourceName.remove(sourceUnit.getName());
 			sources.remove(sourceUnit.getName());
-			names.remove(sourceUnit.getName());
 		}
 		//keep existing modules from other source units
 		List<ModuleNode> modules = ast.getModules();
