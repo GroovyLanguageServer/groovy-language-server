@@ -58,7 +58,6 @@ public class GroovydocUtils {
 
 	private static void appendLine(StringBuilder markdownBuilder, String line) {
 		line = reformatLine(line);
-		System.err.println("reformatted: " + line);
 		if (line.length() == 0) {
 			return;
 		}
