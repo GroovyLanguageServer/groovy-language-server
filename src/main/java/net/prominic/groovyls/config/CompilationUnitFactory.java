@@ -26,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -68,7 +70,7 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 		Set<URI> changedUris = fileContentsTracker.getChangedURIs();
 		if (compilationUnit == null) {
 			compilationUnit = new GroovyLSCompilationUnit(config, null, classLoader);
-			//we don't care about changed URIs if there's no compilation unit yet
+			// we don't care about changed URIs if there's no compilation unit yet
 			changedUris = null;
 		} else {
 			compilationUnit.setClassLoader(classLoader);
@@ -80,8 +82,8 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 					sourcesToRemove.add(sourceUnit);
 				}
 			});
-			//if an URI has changed, we remove it from the compilation unit so
-			//that a new version can be built from the updated source file
+			// if an URI has changed, we remove it from the compilation unit so
+			// that a new version can be built from the updated source file
 			compilationUnit.removeSources(sourcesToRemove);
 		}
 
@@ -90,8 +92,8 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 		} else {
 			final Set<URI> urisToAdd = changedUris;
 			fileContentsTracker.getOpenURIs().forEach(uri -> {
-				//if we're only tracking changes, skip all files that haven't
-				//actually changed
+				// if we're only tracking changes, skip all files that haven't
+				// actually changed
 				if (urisToAdd != null && !urisToAdd.contains(uri)) {
 					return;
 				}
@@ -105,6 +107,10 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 
 	protected CompilerConfiguration getConfiguration() {
 		CompilerConfiguration config = new CompilerConfiguration();
+
+		Map<String, Boolean> optimizationOptions = new HashMap<>();
+		optimizationOptions.put(CompilerConfiguration.GROOVYDOC, true);
+		config.setOptimizationOptions(optimizationOptions);
 
 		List<String> classpathList = new ArrayList<>();
 		getClasspathList(classpathList);
