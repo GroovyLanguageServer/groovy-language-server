@@ -340,7 +340,7 @@ public class GroovyASTUtils {
                     score++;
                 }
             } else if (paramType != null) {
-                //extra parameters are like a type not matching
+                // extra parameters are like a type not matching
                 score++;
             }
         }
@@ -367,6 +367,9 @@ public class GroovyASTUtils {
             return new Range(new Position(0, 0), new Position(0, 0));
         }
         Range nodeRange = GroovyLanguageServerUtils.astNodeToRange(afterNode);
+        if (nodeRange == null) {
+            return new Range(new Position(0, 0), new Position(0, 0));
+        }
         Position position = new Position(nodeRange.getEnd().getLine() + 1, 0);
         return new Range(position, position);
     }

@@ -78,8 +78,8 @@ public class CompletionProvider {
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> provideCompletion(
 			TextDocumentIdentifier textDocument, Position position, CompletionContext context) {
 		if (ast == null) {
-			//this shouldn't happen, but let's avoid an exception if something
-			//goes terribly wrong.
+			// this shouldn't happen, but let's avoid an exception if something
+			// goes terribly wrong.
 			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
 		URI uri = URI.create(textDocument.getUri());
@@ -123,6 +123,9 @@ public class CompletionProvider {
 	private void populateItemsFromPropertyExpression(PropertyExpression propExpr, Position position,
 			List<CompletionItem> items) {
 		Range propertyRange = GroovyLanguageServerUtils.astNodeToRange(propExpr.getProperty());
+		if (propertyRange == null) {
+			return;
+		}
 		String memberName = getMemberName(propExpr.getPropertyAsString(), propertyRange, position);
 		populateItemsFromExpression(propExpr.getObjectExpression(), memberName, items);
 	}
@@ -130,13 +133,19 @@ public class CompletionProvider {
 	private void populateItemsFromMethodCallExpression(MethodCallExpression methodCallExpr, Position position,
 			List<CompletionItem> items) {
 		Range methodRange = GroovyLanguageServerUtils.astNodeToRange(methodCallExpr.getMethod());
+		if (methodRange == null) {
+			return;
+		}
 		String memberName = getMemberName(methodCallExpr.getMethodAsString(), methodRange, position);
 		populateItemsFromExpression(methodCallExpr.getObjectExpression(), memberName, items);
 	}
 
 	private void populateItemsFromImportNode(ImportNode importNode, Position position, List<CompletionItem> items) {
 		Range importRange = GroovyLanguageServerUtils.astNodeToRange(importNode);
-		//skip the "import " at the beginning
+		if (importRange == null) {
+			return;
+		}
+		// skip the "import " at the beginning
 		importRange.setStart(new Position(importRange.getEnd().getLine(),
 				importRange.getEnd().getCharacter() - importNode.getType().getName().length()));
 		String importText = getMemberName(importNode.getType().getName(), importRange, position);
@@ -229,6 +238,9 @@ public class CompletionProvider {
 		}
 		ClassNode parentClassNode = (ClassNode) parentNode;
 		Range classRange = GroovyLanguageServerUtils.astNodeToRange(classNode);
+		if (classRange == null) {
+			return;
+		}
 		String className = getMemberName(classNode.getUnresolvedName(), classRange, position);
 		if (classNode.equals(parentClassNode.getUnresolvedSuperClass())) {
 			populateTypes(classNode, className, new HashSet<>(), true, false, false, items);
@@ -240,6 +252,9 @@ public class CompletionProvider {
 	private void populateItemsFromConstructorCallExpression(ConstructorCallExpression constructorCallExpr,
 			Position position, List<CompletionItem> items) {
 		Range typeRange = GroovyLanguageServerUtils.astNodeToRange(constructorCallExpr.getType());
+		if (typeRange == null) {
+			return;
+		}
 		String typeName = getMemberName(constructorCallExpr.getType().getNameWithoutPackage(), typeRange, position);
 		populateTypes(constructorCallExpr, typeName, new HashSet<>(), true, false, false, items);
 	}
@@ -247,6 +262,9 @@ public class CompletionProvider {
 	private void populateItemsFromVariableExpression(VariableExpression varExpr, Position position,
 			List<CompletionItem> items) {
 		Range varRange = GroovyLanguageServerUtils.astNodeToRange(varExpr);
+		if (varRange == null) {
+			return;
+		}
 		String memberName = getMemberName(varExpr.getName(), varRange, position);
 		populateItemsFromScope(varExpr, memberName, items);
 	}
@@ -255,7 +273,7 @@ public class CompletionProvider {
 			String memberNamePrefix, Set<String> existingNames, List<CompletionItem> items) {
 		List<CompletionItem> propItems = properties.stream().filter(property -> {
 			String name = property.getName();
-			//sometimes, a property and a field will have the same name
+			// sometimes, a property and a field will have the same name
 			if (name.startsWith(memberNamePrefix) && !existingNames.contains(name)) {
 				existingNames.add(name);
 				return true;
@@ -270,7 +288,7 @@ public class CompletionProvider {
 		items.addAll(propItems);
 		List<CompletionItem> fieldItems = fields.stream().filter(field -> {
 			String name = field.getName();
-			//sometimes, a property and a field will have the same name
+			// sometimes, a property and a field will have the same name
 			if (name.startsWith(memberNamePrefix) && !existingNames.contains(name)) {
 				existingNames.add(name);
 				return true;
@@ -289,7 +307,7 @@ public class CompletionProvider {
 			List<CompletionItem> items) {
 		List<CompletionItem> methodItems = methods.stream().filter(method -> {
 			String methodName = method.getName();
-			//overloads can cause duplicates
+			// overloads can cause duplicates
 			if (methodName.startsWith(memberNamePrefix) && !existingNames.contains(methodName)) {
 				existingNames.add(methodName);
 				return true;
@@ -320,7 +338,7 @@ public class CompletionProvider {
 		List<CompletionItem> variableItems = variableScope.getDeclaredVariables().values().stream().filter(variable -> {
 
 			String variableName = variable.getName();
-			//overloads can cause duplicates
+			// overloads can cause duplicates
 			if (variableName.startsWith(memberNamePrefix) && !existingNames.contains(variableName)) {
 				existingNames.add(variableName);
 				return true;

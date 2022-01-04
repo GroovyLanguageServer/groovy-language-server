@@ -45,8 +45,8 @@ public class WorkspaceSymbolProvider {
 
 	public CompletableFuture<List<? extends SymbolInformation>> provideWorkspaceSymbols(String query) {
 		if (ast == null) {
-			//this shouldn't happen, but let's avoid an exception if something
-			//goes terribly wrong.
+			// this shouldn't happen, but let's avoid an exception if something
+			// goes terribly wrong.
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
 		String lowerCaseQuery = query.toLowerCase();
@@ -91,7 +91,7 @@ public class WorkspaceSymbolProvider {
 			}
 			// this should never happen
 			return null;
-		}).collect(Collectors.toList());
+		}).filter(symbolInformation -> symbolInformation != null).collect(Collectors.toList());
 		return CompletableFuture.completedFuture(symbols);
 	}
 }

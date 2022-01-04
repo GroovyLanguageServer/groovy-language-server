@@ -53,8 +53,8 @@ public class SignatureHelpProvider {
 	public CompletableFuture<SignatureHelp> provideSignatureHelp(TextDocumentIdentifier textDocument,
 			Position position) {
 		if (ast == null) {
-			//this shouldn't happen, but let's avoid an exception if something
-			//goes terribly wrong.
+			// this shouldn't happen, but let's avoid an exception if something
+			// goes terribly wrong.
 			return CompletableFuture.completedFuture(new SignatureHelp(Collections.emptyList(), -1, -1));
 		}
 		URI uri = URI.create(textDocument.getUri());
@@ -110,6 +110,9 @@ public class SignatureHelpProvider {
 		for (int i = 0; i < expressions.size(); i++) {
 			Expression expr = expressions.get(i);
 			Range exprRange = GroovyLanguageServerUtils.astNodeToRange(expr);
+			if (exprRange == null) {
+				continue;
+			}
 			if (position.getLine() < exprRange.getEnd().getLine()) {
 				return i;
 			}

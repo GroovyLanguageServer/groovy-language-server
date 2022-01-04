@@ -109,8 +109,8 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 		@Override
 		public boolean equals(Object o) {
-			//some ASTNode subclasses, like ClassNode, override equals() with
-			//comparisons that are not strict. we need strict.
+			// some ASTNode subclasses, like ClassNode, override equals() with
+			// comparisons that are not strict. we need strict.
 			ASTLookupKey other = (ASTLookupKey) o;
 			return node == other.node;
 		}
@@ -196,11 +196,14 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 		List<ASTNode> foundNodes = nodes.stream().filter(node -> {
 			if (node.getLineNumber() == -1) {
-				//can't be the offset node if it has no position
-				//also, do this first because it's the fastest comparison
+				// can't be the offset node if it has no position
+				// also, do this first because it's the fastest comparison
 				return false;
 			}
 			Range range = GroovyLanguageServerUtils.astNodeToRange(node);
+			if (range == null) {
+				return false;
+			}
 			boolean result = Ranges.contains(range, position);
 			if (result) {
 				// save the range object to avoid creating it again when we
@@ -218,7 +221,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 			if (result != 0) {
 				return result;
 			}
-			//n1 and n2 have the same range
+			// n1 and n2 have the same range
 			if (contains(n1, n2)) {
 				if (n1 instanceof ClassNode && n2 instanceof ConstructorNode) {
 					return -1;
@@ -279,7 +282,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	public void visitCompilationUnit(CompilationUnit unit, Collection<URI> uris) {
 		uris.forEach(uri -> {
-			//clear all old nodes so that they may be replaced
+			// clear all old nodes so that they may be replaced
 			List<ASTNode> nodes = nodesByURI.remove(uri);
 			if (nodes != null) {
 				nodes.forEach(node -> {
@@ -816,15 +819,15 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	//this calls visitBinaryExpression()
-	/*public void visitDeclarationExpression(DeclarationExpression node) {
-		pushASTNode(node);
-		try {
-			super.visitDeclarationExpression(node);
-		} finally {
-			popASTNode();
-		}
-	}*/
+	// this calls visitBinaryExpression()
+	// public void visitDeclarationExpression(DeclarationExpression node) {
+	// pushASTNode(node);
+	// try {
+	// super.visitDeclarationExpression(node);
+	// } finally {
+	// popASTNode();
+	// }
+	// }
 
 	public void visitPropertyExpression(PropertyExpression node) {
 		pushASTNode(node);
@@ -871,15 +874,15 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	//this calls visitTupleListExpression()
-	/*public void visitArgumentlistExpression(ArgumentListExpression node) {
-		pushASTNode(node);
-		try {
-			super.visitArgumentlistExpression(node);
-		} finally {
-			popASTNode();
-		}
-	}*/
+	// this calls visitTupleListExpression()
+	// public void visitArgumentlistExpression(ArgumentListExpression node) {
+	// pushASTNode(node);
+	// try {
+	// super.visitArgumentlistExpression(node);
+	// } finally {
+	// popASTNode();
+	// }
+	// }
 
 	public void visitClosureListExpression(ClosureListExpression node) {
 		pushASTNode(node);

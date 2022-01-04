@@ -71,8 +71,8 @@ public class RenameProvider {
 		WorkspaceEdit workspaceEdit = new WorkspaceEdit(documentChanges);
 
 		if (ast == null) {
-			//this shouldn't happen, but let's avoid an exception if something
-			//goes terribly wrong.
+			// this shouldn't happen, but let's avoid an exception if something
+			// goes terribly wrong.
 			return CompletableFuture.completedFuture(workspaceEdit);
 		}
 		URI documentURI = URI.create(textDocument.getUri());
@@ -89,7 +89,15 @@ public class RenameProvider {
 			}
 
 			String contents = getPartialNodeText(uri, node);
+			if (contents == null) {
+				// can't find the text? skip it
+				return;
+			}
 			Range range = GroovyLanguageServerUtils.astNodeToRange(node);
+			if (range == null) {
+				// can't find the range? skip it
+				return;
+			}
 			Position start = range.getStart();
 			Position end = range.getEnd();
 			end.setLine(start.getLine());
@@ -144,8 +152,14 @@ public class RenameProvider {
 	}
 
 	private String getPartialNodeText(URI uri, ASTNode node) {
-		String contents = files.getContents(uri);
 		Range range = GroovyLanguageServerUtils.astNodeToRange(node);
+		if (range == null) {
+			return null;
+		}
+		String contents = files.getContents(uri);
+		if (contents == null) {
+			return null;
+		}
 		return Ranges.getSubstring(contents, range, 1);
 	}
 

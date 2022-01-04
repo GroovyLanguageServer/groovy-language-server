@@ -44,8 +44,8 @@ public class ReferenceProvider {
 	public CompletableFuture<List<? extends Location>> provideReferences(TextDocumentIdentifier textDocument,
 			Position position) {
 		if (ast == null) {
-			//this shouldn't happen, but let's avoid an exception if something
-			//goes terribly wrong.
+			// this shouldn't happen, but let's avoid an exception if something
+			// goes terribly wrong.
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
 		URI documentURI = URI.create(textDocument.getUri());
@@ -57,8 +57,8 @@ public class ReferenceProvider {
 		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast);
 		List<Location> locations = references.stream().map(node -> {
 			URI uri = ast.getURI(node);
-			return new Location(uri.toString(), GroovyLanguageServerUtils.astNodeToRange(node));
-		}).collect(Collectors.toList());
+			return GroovyLanguageServerUtils.astNodeToLocation(node, uri);
+		}).filter(location -> location != null).collect(Collectors.toList());
 
 		return CompletableFuture.completedFuture(locations);
 	}

@@ -49,8 +49,8 @@ public class DocumentSymbolProvider {
 	public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> provideDocumentSymbols(
 			TextDocumentIdentifier textDocument) {
 		if (ast == null) {
-			//this shouldn't happen, but let's avoid an exception if something
-			//goes terribly wrong.
+			// this shouldn't happen, but let's avoid an exception if something
+			// goes terribly wrong.
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
 		URI uri = URI.create(textDocument.getUri());
@@ -78,7 +78,7 @@ public class DocumentSymbolProvider {
 			}
 			// this should never happen
 			return null;
-		}).map(node -> {
+		}).filter(symbolInformation -> symbolInformation != null).map(node -> {
 			return Either.<SymbolInformation, DocumentSymbol>forLeft(node);
 		}).collect(Collectors.toList());
 		return CompletableFuture.completedFuture(symbols);
