@@ -25,13 +25,13 @@ jobs:
         working-directory: vscode-extension
         run: ./gradlew build
       - uses: actions/upload-artifact@v2
-        if: ${{ matrix.java-version == "8" }}
+        if: ${{ matrix.java-version == '8' }}
         with:
           name: groovy-language-server
           path: build/libs/groovy-language-server-all.jar
           if-no-files-found: error
       - uses: actions/upload-artifact@v2
-        if: ${{ matrix.java-version == "8" }}
+        if: ${{ matrix.java-version == '8' }}
         with:
           name: groovy-vscode-extension
           path: vscode-extension/build/groovy-*.vsix
