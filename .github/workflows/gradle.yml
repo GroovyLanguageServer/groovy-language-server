@@ -32,5 +32,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: groovy-vscode-extension
-          path: vscode-extension/build/bin/groovy-*.vsix
+          path: vscode-extension/build/groovy-*.vsix
           if-no-files-found: error
