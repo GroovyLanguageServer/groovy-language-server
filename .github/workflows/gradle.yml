@@ -10,17 +10,27 @@ jobs:
   build:
     strategy:
       matrix:
-        java-version: [ '8', '11', '17' ]
+        java-version: ["8", "11", "17"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v2
         with:
-          distribution: 'temurin'
+          distribution: "temurin"
           java-version: ${{ matrix.java-version }}
       - name: Build language server with Gradle
         run: ./gradlew build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: groovy-language-server
+          path: build/libs/groovy-language-server-all.jar
+          if-no-files-found: error
       - name: Build VSCode extension with Gradle
         working-directory: vscode-extension
         run: ./gradlew build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: groovy-vscode-extension
+          path: vscode-extension/build/bin/groovy-*.vsix
+          if-no-files-found: error
