@@ -36,7 +36,18 @@ import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
 
 public class GroovyLanguageServerUtils {
+	/**
+	 * Converts a Groovy position to a LSP position.
+	 * 
+	 * May return null if the Groovy line is -1
+	 */
 	public static Position createGroovyPosition(int groovyLine, int groovyColumn) {
+		if (groovyLine == -1) {
+			return null;
+		}
+		if (groovyColumn == -1) {
+			groovyColumn = 0;
+		}
 		int lspLine = groovyLine;
 		if (lspLine > 0) {
 			lspLine--;
@@ -53,9 +64,21 @@ public class GroovyLanguageServerUtils {
 				createGroovyPosition(exception.getEndLine(), exception.getEndColumn()));
 	}
 
+	/**
+	 * Converts a Groovy AST node to an LSP range.
+	 * 
+	 * May return null if the node's start line is -1
+	 */
 	public static Range astNodeToRange(ASTNode node) {
-		return new Range(createGroovyPosition(node.getLineNumber(), node.getColumnNumber()),
-				createGroovyPosition(node.getLastLineNumber(), node.getLastColumnNumber()));
+		Position start = createGroovyPosition(node.getLineNumber(), node.getColumnNumber());
+		if (start == null) {
+			return null;
+		}
+		Position end = createGroovyPosition(node.getLastLineNumber(), node.getLastColumnNumber());
+		if (end == null) {
+			end = start;
+		}
+		return new Range(start, end);
 	}
 
 	public static CompletionItemKind astNodeToCompletionItemKind(ASTNode node) {
@@ -98,17 +121,36 @@ public class GroovyLanguageServerUtils {
 		return SymbolKind.Property;
 	}
 
+	/**
+	 * Converts a Groovy AST node to an LSP location.
+	 * 
+	 * May return null if the node's start line is -1
+	 */
 	public static Location astNodeToLocation(ASTNode node, URI uri) {
-		return new Location(uri.toString(), astNodeToRange(node));
+		Range range = astNodeToRange(node);
+		if (range == null) {
+			return null;
+		}
+		return new Location(uri.toString(), range);
 	}
 
 	public static SymbolInformation astNodeToSymbolInformation(ClassNode node, URI uri, String parentName) {
-		return new SymbolInformation(node.getName(), astNodeToSymbolKind(node), astNodeToLocation(node, uri),
+		Location location = astNodeToLocation(node, uri);
+		if (location == null) {
+			return null;
+		}
+		SymbolKind symbolKind = astNodeToSymbolKind(node);
+		return new SymbolInformation(node.getName(), symbolKind, location,
 				parentName);
 	}
 
 	public static SymbolInformation astNodeToSymbolInformation(MethodNode node, URI uri, String parentName) {
-		return new SymbolInformation(node.getName(), astNodeToSymbolKind(node), astNodeToLocation(node, uri),
+		Location location = astNodeToLocation(node, uri);
+		if (location == null) {
+			return null;
+		}
+		SymbolKind symbolKind = astNodeToSymbolKind(node);
+		return new SymbolInformation(node.getName(), symbolKind, location,
 				parentName);
 	}
 
@@ -118,7 +160,12 @@ public class GroovyLanguageServerUtils {
 			return null;
 		}
 		ASTNode astVar = (ASTNode) node;
-		return new SymbolInformation(node.getName(), astNodeToSymbolKind(astVar), astNodeToLocation(astVar, uri),
+		Location location = astNodeToLocation(astVar, uri);
+		if (location == null) {
+			return null;
+		}
+		SymbolKind symbolKind = astNodeToSymbolKind(astVar);
+		return new SymbolInformation(node.getName(), symbolKind, location,
 				parentName);
 	}
 }
