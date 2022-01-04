@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ImportNode;
@@ -48,6 +49,8 @@ import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
+import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
@@ -62,6 +65,7 @@ import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
+import net.prominic.groovyls.compiler.util.GroovydocUtils;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class CompletionProvider {
@@ -178,6 +182,10 @@ public class CompletionProvider {
 			if (classNode.getNameWithoutPackage().startsWith(importText)) {
 				item.setSortText(classNode.getNameWithoutPackage());
 			}
+			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(classNode.getGroovydoc());
+			if (markdownDocs != null) {
+				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
+			}
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(localClassItems);
@@ -283,6 +291,10 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(property.getName());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(property));
+			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(property.getGroovydoc());
+			if (markdownDocs != null) {
+				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
+			}
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(propItems);
@@ -298,6 +310,10 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(field.getName());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(field));
+			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(field.getGroovydoc());
+			if (markdownDocs != null) {
+				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
+			}
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(fieldItems);
@@ -317,6 +333,10 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(method.getName());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(method));
+			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(method.getGroovydoc());
+			if (markdownDocs != null) {
+				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
+			}
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(methodItems);
@@ -348,6 +368,13 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(variable.getName());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
+			if (variable instanceof AnnotatedNode) {
+				AnnotatedNode annotatedVar = (AnnotatedNode) variable;
+				String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(annotatedVar.getGroovydoc());
+				if (markdownDocs != null) {
+					item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
+				}
+			}
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(variableItems);
@@ -415,6 +442,10 @@ public class CompletionProvider {
 			item.setLabel(classNode.getNameWithoutPackage());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
 			item.setDetail(packageName);
+			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(classNode.getGroovydoc());
+			if (markdownDocs != null) {
+				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
+			}
 			if (packageName != null && !packageName.equals(enclosingPackageName) && !importNames.contains(className)) {
 				List<TextEdit> additionalTextEdits = new ArrayList<>();
 				TextEdit addImportEdit = createAddImportTextEdit(className, addImportRange);
