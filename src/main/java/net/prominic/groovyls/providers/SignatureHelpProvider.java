@@ -31,15 +31,20 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
+import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.ParameterInformation;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SignatureHelp;
 import org.eclipse.lsp4j.SignatureInformation;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import groovy.lang.groovydoc.Groovydoc;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
+import net.prominic.groovyls.compiler.util.GroovydocUtils;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 import net.prominic.groovyls.util.GroovyNodeToStringUtils;
 
@@ -89,7 +94,6 @@ public class SignatureHelpProvider {
 			Parameter[] methodParams = method.getParameters();
 			for (int i = 0; i < methodParams.length; i++) {
 				Parameter methodParam = methodParams[i];
-
 				ParameterInformation paramInfo = new ParameterInformation();
 				paramInfo.setLabel(GroovyNodeToStringUtils.variableToString(methodParam, ast));
 				parameters.add(paramInfo);
@@ -97,6 +101,11 @@ public class SignatureHelpProvider {
 			SignatureInformation sigInfo = new SignatureInformation();
 			sigInfo.setLabel(GroovyNodeToStringUtils.methodToString(method, ast));
 			sigInfo.setParameters(parameters);
+			Groovydoc methodGroovydoc = method.getGroovydoc();
+			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(methodGroovydoc);
+			if (markdownDocs != null) {
+				sigInfo.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
+			}
 			sigInfos.add(sigInfo);
 		}
 
