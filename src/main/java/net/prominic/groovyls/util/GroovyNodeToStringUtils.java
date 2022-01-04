@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright 2021 Prominic.NET, Inc.
+// Copyright 2022 Prominic.NET, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class GroovyNodeToStringUtils {
 		try {
 			superClass = classNode.getSuperClass();
 		} catch (NoClassDefFoundError e) {
-			//this is fine, we'll just treat it as null
+			// this is fine, we'll just treat it as null
 		}
 		if (superClass != null && !superClass.getName().equals(JAVA_OBJECT)) {
 			builder.append(" extends ");

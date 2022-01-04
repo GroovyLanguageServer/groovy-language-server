@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright 2021 Prominic.NET, Inc.
+// Copyright 2022 Prominic.NET, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,11 +56,11 @@ public class Ranges {
 		}
 		try {
 			for (int i = 0; i < startLine; i++) {
-				//ignore these lines
+				// ignore these lines
 				reader.readLine();
 			}
 			for (int i = 0; i < startChar; i++) {
-				//ignore these characters
+				// ignore these characters
 				reader.read();
 			}
 			int endCharStart = startChar;
@@ -76,7 +76,7 @@ public class Ranges {
 					builder.append(character);
 				}
 			}
-			//the remaining characters on the final line
+			// the remaining characters on the final line
 			for (int i = endCharStart; i < endChar; i++) {
 				builder.append((char) reader.read());
 			}

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright 2021 Prominic.NET, Inc.
+// Copyright 2022 Prominic.NET, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -238,14 +238,14 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			}
 			DidChangeTextDocumentParams didChangeParams = new DidChangeTextDocumentParams(versionedTextDocument,
 					Collections.singletonList(changeEvent));
-			//if the offset node is null, there is probably a syntax error.
-			//a completion request is usually triggered by the . character, and
-			//if there is no property name after the dot, it will cause a syntax
-			//error.
-			//this hack adds a placeholder property name in the hopes that it
-			//will correctly create a PropertyExpression to use for completion.
-			//we'll restore the original text after we're done handling the
-			//completion request.
+			// if the offset node is null, there is probably a syntax error.
+			// a completion request is usually triggered by the . character, and
+			// if there is no property name after the dot, it will cause a syntax
+			// error.
+			// this hack adds a placeholder property name in the hopes that it
+			// will correctly create a PropertyExpression to use for completion.
+			// we'll restore the original text after we're done handling the
+			// completion request.
 			didChange(didChangeParams);
 		}
 
@@ -296,14 +296,14 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 					new Range(position, position), 0, ")");
 			DidChangeTextDocumentParams didChangeParams = new DidChangeTextDocumentParams(versionedTextDocument,
 					Collections.singletonList(changeEvent));
-			//if the offset node is null, there is probably a syntax error.
-			//a signature help request is usually triggered by the ( character,
-			//and if there is no matching ), it will cause a syntax error.
-			//this hack adds a placeholder ) character in the hopes that it
-			//will correctly create a ArgumentListExpression to use for
-			//signature help.
-			//we'll restore the original text after we're done handling the
-			//signature help request.
+			// if the offset node is null, there is probably a syntax error.
+			// a signature help request is usually triggered by the ( character,
+			// and if there is no matching ), it will cause a syntax error.
+			// this hack adds a placeholder ) character in the hopes that it
+			// will correctly create a ArgumentListExpression to use for
+			// signature help.
+			// we'll restore the original text after we're done handling the
+			// signature help request.
 			didChange(didChangeParams);
 		}
 
@@ -442,9 +442,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			return;
 		}
 		try {
-			//AST is completely built after the canonicalization phase
-			//for code intelligence, we shouldn't need to go further
-			//http://groovy-lang.org/metaprogramming.html#_compilation_phases_guide
+			// AST is completely built after the canonicalization phase
+			// for code intelligence, we shouldn't need to go further
+			// http://groovy-lang.org/metaprogramming.html#_compilation_phases_guide
 			compilationUnit.compile(Phases.CANONICALIZATION);
 		} catch (MultipleCompilationErrorsException e) {
 			// ignore

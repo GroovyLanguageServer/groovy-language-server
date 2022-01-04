@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright 2021 Prominic.NET, Inc.
+// Copyright 2022 Prominic.NET, Inc.
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -274,7 +274,7 @@ class GroovyServicesCompletionTests {
 
 		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
 
-		//this first test should include both methods...
+		// this first test should include both methods...
 		Position position = new Position(2, 11);
 		Either<List<CompletionItem>, CompletionList> result = services
 				.completion(new CompletionParams(textDocument, position)).get();
@@ -287,7 +287,7 @@ class GroovyServicesCompletionTests {
 		}).collect(Collectors.toList());
 		Assertions.assertEquals(2, filteredItems.size());
 
-		//...and this one should only include the one with the longer name
+		// ...and this one should only include the one with the longer name
 		position = new Position(2, 13);
 		result = services.completion(new CompletionParams(textDocument, position)).get();
 		Assertions.assertTrue(result.isLeft());
