@@ -23,6 +23,7 @@ import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Variable;
@@ -32,8 +33,10 @@ import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 
+import groovy.lang.groovydoc.Groovydoc;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
+import net.prominic.groovyls.compiler.util.GroovydocUtils;
 import net.prominic.groovyls.util.GroovyNodeToStringUtils;
 
 public class HoverProvider {
@@ -45,8 +48,8 @@ public class HoverProvider {
 
 	public CompletableFuture<Hover> provideHover(TextDocumentIdentifier textDocument, Position position) {
 		if (ast == null) {
-			//this shouldn't happen, but let's avoid an exception if something
-			//goes terribly wrong.
+			// this shouldn't happen, but let's avoid an exception if something
+			// goes terribly wrong.
 			return CompletableFuture.completedFuture(null);
 		}
 
@@ -66,9 +69,25 @@ public class HoverProvider {
 			return CompletableFuture.completedFuture(null);
 		}
 
+		String documentation = null;
+		if (definitionNode instanceof AnnotatedNode) {
+			AnnotatedNode annotatedNode = (AnnotatedNode) definitionNode;
+			Groovydoc groovydoc = annotatedNode.getGroovydoc();
+			documentation = GroovydocUtils.groovydocToMarkdownDescription(groovydoc);
+		}
+
+		StringBuilder contentsBuilder = new StringBuilder();
+		contentsBuilder.append("```groovy\n");
+		contentsBuilder.append(content);
+		contentsBuilder.append("\n```");
+		if (documentation != null) {
+			contentsBuilder.append("\n\n---\n\n");
+			contentsBuilder.append(documentation);
+		}
+
 		MarkupContent contents = new MarkupContent();
 		contents.setKind(MarkupKind.MARKDOWN);
-		contents.setValue("```groovy\n" + content + "\n```");
+		contents.setValue(contentsBuilder.toString());
 		Hover hover = new Hover();
 		hover.setContents(contents);
 		return CompletableFuture.completedFuture(hover);
