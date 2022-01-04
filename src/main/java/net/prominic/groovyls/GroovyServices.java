@@ -42,6 +42,7 @@ import com.google.gson.JsonObject;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.Phases;
@@ -446,7 +447,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			// for code intelligence, we shouldn't need to go further
 			// http://groovy-lang.org/metaprogramming.html#_compilation_phases_guide
 			compilationUnit.compile(Phases.CANONICALIZATION);
-		} catch (MultipleCompilationErrorsException e) {
+		} catch (CompilationFailedException e) {
 			// ignore
 		} catch (GroovyBugError e) {
 			System.err.println("Unexpected exception in language server when compiling Groovy.");
