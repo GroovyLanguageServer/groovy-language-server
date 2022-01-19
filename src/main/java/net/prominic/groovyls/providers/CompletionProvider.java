@@ -57,9 +57,6 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
-import groovy.lang.GroovyClassLoader;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassGraphException;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
@@ -69,21 +66,14 @@ import net.prominic.groovyls.compiler.util.GroovydocUtils;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class CompletionProvider {
-	private static GroovyClassLoader prevClassLoader;
-	private static ScanResult scanResult;
-
 	private ASTNodeVisitor ast;
-	private GroovyClassLoader classLoader;
+	private ScanResult classGraphScanResult;
 	private int maxItemCount = 1000;
 	private boolean isIncomplete = false;
 
-	public CompletionProvider(ASTNodeVisitor ast, GroovyClassLoader classLoader) {
+	public CompletionProvider(ASTNodeVisitor ast, ScanResult classGraphScanResult) {
 		this.ast = ast;
-		this.classLoader = classLoader;
-		if (!classLoader.equals(prevClassLoader)) {
-			prevClassLoader = classLoader;
-			scanResult = null;
-		}
+		this.classGraphScanResult = classGraphScanResult;
 	}
 
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> provideCompletion(
@@ -197,14 +187,11 @@ public class CompletionProvider {
 		}).collect(Collectors.toList());
 		items.addAll(localClassItems);
 
-		if (scanResult == null) {
-			scanResult = scanClasses();
-		}
-		if (scanResult == null) {
+		if (classGraphScanResult == null) {
 			return;
 		}
-		List<ClassInfo> classes = scanResult.getAllClasses();
-		List<PackageInfo> packages = scanResult.getPackageInfo();
+		List<ClassInfo> classes = classGraphScanResult.getAllClasses();
+		List<PackageInfo> packages = classGraphScanResult.getPackageInfo();
 
 		List<CompletionItem> packageItems = packages.stream().filter(packageInfo -> {
 			String packageName = packageInfo.getName();
@@ -465,13 +452,10 @@ public class CompletionProvider {
 		}).collect(Collectors.toList());
 		items.addAll(localClassItems);
 
-		if (scanResult == null) {
-			scanResult = scanClasses();
-		}
-		if (scanResult == null) {
+		if (classGraphScanResult == null) {
 			return;
 		}
-		List<ClassInfo> classes = scanResult.getAllClasses();
+		List<ClassInfo> classes = classGraphScanResult.getAllClasses();
 
 		List<CompletionItem> classItems = classes.stream().filter(classInfo -> {
 			if (isIncomplete) {
@@ -536,14 +520,5 @@ public class CompletionProvider {
 		edit.setNewText(builder.toString());
 		edit.setRange(range);
 		return edit;
-	}
-
-	private ScanResult scanClasses() {
-		try {
-			return new ClassGraph().overrideClassLoaders(classLoader).enableClassInfo().enableSystemJarsAndModules()
-					.scan();
-		} catch (ClassGraphException e) {
-		}
-		return null;
 	}
 }

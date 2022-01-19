@@ -44,7 +44,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ErrorCollector;
-import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -87,6 +86,10 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import groovy.lang.GroovyClassLoader;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassGraphException;
+import io.github.classgraph.ScanResult;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
 import net.prominic.groovyls.config.ICompilationUnitFactory;
@@ -114,6 +117,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private ASTNodeVisitor astVisitor;
 	private Map<URI, List<Diagnostic>> prevDiagnosticsByFile;
 	private FileContentsTracker fileContentsTracker = new FileContentsTracker();
+	private ScanResult classGraphScanResult = null;
+	private GroovyClassLoader classLoader = null;
 	private URI previousContext = null;
 
 	public GroovyServices(ICompilationUnitFactory factory) {
@@ -252,7 +257,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 		CompletableFuture<Either<List<CompletionItem>, CompletionList>> result = null;
 		try {
-			CompletionProvider provider = new CompletionProvider(astVisitor, compilationUnit.getClassLoader());
+			CompletionProvider provider = new CompletionProvider(astVisitor, classGraphScanResult);
 			result = provider.provideCompletion(params.getTextDocument(), params.getPosition(), params.getContext());
 		} finally {
 			if (originalSource != null) {
@@ -413,6 +418,20 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			if (targetDirectory != null && !targetDirectory.exists() && !targetDirectory.mkdirs()) {
 				System.err.println("Failed to create target directory: " + targetDirectory.getAbsolutePath());
 			}
+			GroovyClassLoader newClassLoader = compilationUnit.getClassLoader();
+			if (!newClassLoader.equals(classLoader)) {
+				classLoader = newClassLoader;
+
+				try {
+					classGraphScanResult = new ClassGraph().overrideClassLoaders(classLoader).enableClassInfo()
+							.enableSystemJarsAndModules()
+							.scan();
+				} catch (ClassGraphException e) {
+					classGraphScanResult = null;
+				}
+			}
+		} else {
+			classGraphScanResult = null;
 		}
 
 		return compilationUnit != null && compilationUnit.equals(oldCompilationUnit);
