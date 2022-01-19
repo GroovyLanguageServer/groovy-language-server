@@ -398,7 +398,11 @@ public class CompletionProvider {
 			}
 			current = ast.getParent(current);
 		}
-		populateTypes(node, namePrefix, existingNames, items);
+		if (namePrefix.length() == 0) {
+			isIncomplete = true;
+		} else {
+			populateTypes(node, namePrefix, existingNames, items);
+		}
 	}
 
 	private void populateTypes(ASTNode offsetNode, String namePrefix, Set<String> existingNames,
