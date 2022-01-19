@@ -69,6 +69,9 @@ import net.prominic.groovyls.compiler.util.GroovydocUtils;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 
 public class CompletionProvider {
+	private static GroovyClassLoader prevClassLoader;
+	private static ScanResult scanResult;
+
 	private ASTNodeVisitor ast;
 	private GroovyClassLoader classLoader;
 	private int maxItemCount = 1000;
@@ -77,6 +80,10 @@ public class CompletionProvider {
 	public CompletionProvider(ASTNodeVisitor ast, GroovyClassLoader classLoader) {
 		this.ast = ast;
 		this.classLoader = classLoader;
+		if (!classLoader.equals(prevClassLoader)) {
+			prevClassLoader = classLoader;
+			scanResult = null;
+		}
 	}
 
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> provideCompletion(
@@ -190,7 +197,9 @@ public class CompletionProvider {
 		}).collect(Collectors.toList());
 		items.addAll(localClassItems);
 
-		ScanResult scanResult = scanClasses();
+		if (scanResult == null) {
+			scanResult = scanClasses();
+		}
 		if (scanResult == null) {
 			return;
 		}
@@ -456,7 +465,9 @@ public class CompletionProvider {
 		}).collect(Collectors.toList());
 		items.addAll(localClassItems);
 
-		ScanResult scanResult = scanClasses();
+		if (scanResult == null) {
+			scanResult = scanClasses();
+		}
 		if (scanResult == null) {
 			return;
 		}
