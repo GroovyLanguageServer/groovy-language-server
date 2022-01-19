@@ -31,7 +31,7 @@ dependencies {
   implementation "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.12.0"
   implementation "org.apache.groovy:groovy:4.0.0-rc-2"
   implementation "com.google.code.gson:gson:2.8.7"
-  implementation "io.github.classgraph:classgraph:4.8.108"
+  implementation "io.github.classgraph:classgraph:4.8.138"
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.2"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.2"
 }
