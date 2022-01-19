@@ -43,6 +43,8 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	private static final String FILE_EXTENSION_GROOVY = ".groovy";
 
 	private GroovyLSCompilationUnit compilationUnit;
+	private CompilerConfiguration config;
+	private GroovyClassLoader classLoader;
 	private List<String> additionalClasspathList;
 
 	public CompilationUnitFactory() {
@@ -59,13 +61,18 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 
 	public void invalidateCompilationUnit() {
 		compilationUnit = null;
+		config = null;
+		classLoader = null;
 	}
 
 	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
-		CompilerConfiguration config = getConfiguration();
+		if (config == null) {
+			config = getConfiguration();
+		}
 
-		GroovyClassLoader classLoader = new GroovyClassLoader(ClassLoader.getSystemClassLoader().getParent(), config,
-				true);
+		if (classLoader == null) {
+			classLoader = new GroovyClassLoader(ClassLoader.getSystemClassLoader().getParent(), config, true);
+		}
 
 		Set<URI> changedUris = fileContentsTracker.getChangedURIs();
 		if (compilationUnit == null) {
