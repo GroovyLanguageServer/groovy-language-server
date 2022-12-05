@@ -94,7 +94,7 @@ function startLanguageServer() {
   vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window },
     (progress) => {
-      return new Promise<void>((resolve, reject) => {
+      return new Promise<void>(async (resolve, reject) => {
         if (!extensionContext) {
           //something very bad happened!
           resolve();
@@ -153,12 +153,13 @@ function startLanguageServer() {
           executable,
           clientOptions
         );
-        languageClient.onReady().then(resolve, (reason: any) => {
+        try {
+          await languageClient.start();
+        } catch (e) {
           resolve();
           vscode.window.showErrorMessage(STARTUP_ERROR);
-        });
-        let disposable = languageClient.start();
-        extensionContext.subscriptions.push(disposable);
+        }
+        resolve();
       });
     }
   );
