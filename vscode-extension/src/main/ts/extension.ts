@@ -158,6 +158,7 @@ function startLanguageServer() {
         } catch (e) {
           resolve();
           vscode.window.showErrorMessage(STARTUP_ERROR);
+          return;
         }
         resolve();
       });
