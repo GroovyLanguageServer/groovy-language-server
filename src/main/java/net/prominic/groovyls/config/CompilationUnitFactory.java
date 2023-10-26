@@ -106,18 +106,18 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 
 		if (workspaceRoot != null) {
 			addDirectoryToCompilationUnit(workspaceRoot, ignoredDirectory, compilationUnit, fileContentsTracker, changedUris);
-		} else {
-			final Set<URI> urisToAdd = changedUris;
-			fileContentsTracker.getOpenURIs().forEach(uri -> {
-				// if we're only tracking changes, skip all files that haven't
-				// actually changed
-				if (urisToAdd != null && !urisToAdd.contains(uri)) {
-					return;
-				}
-				String contents = fileContentsTracker.getContents(uri);
-				addOpenFileToCompilationUnit(uri, contents, compilationUnit);
-			});
 		}
+
+		final Set<URI> urisToAdd = changedUris;
+		fileContentsTracker.getOpenURIs().forEach(uri -> {
+			// if we're only tracking changes, skip all files that haven't
+			// actually changed
+			if (urisToAdd != null && !urisToAdd.contains(uri)) {
+				return;
+			}
+			String contents = fileContentsTracker.getContents(uri);
+			addOpenFileToCompilationUnit(uri, contents, compilationUnit);
+		});
 
 		return compilationUnit;
 	}
