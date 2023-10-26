@@ -112,6 +112,10 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private LanguageClient languageClient;
 
 	private Path workspaceRoot;
+
+	Path targetDirectory;
+
+	List<Path> ignoredDirectory;
 	private ICompilationUnitFactory compilationUnitFactory;
 	private GroovyLSCompilationUnit compilationUnit;
 	private ASTNodeVisitor astVisitor;
@@ -182,11 +186,13 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			return;
 		}
 		JsonObject settings = (JsonObject) params.getSettings();
-		this.updateClasspath(settings);
+		this.updateSettings(settings);
 	}
 
-	private void updateClasspath(JsonObject settings) {
+	private void updateSettings(JsonObject settings) {
 		List<String> classpathList = new ArrayList<>();
+		List<Path> ignoredDirList = new ArrayList<>();
+		boolean change = false;
 
 		if (settings.has("groovy") && settings.get("groovy").isJsonObject()) {
 			JsonObject groovy = settings.get("groovy").getAsJsonObject();
@@ -196,11 +202,43 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 					classpathList.add(element.getAsString());
 				});
 			}
+
+			if(groovy.has("targetDirectory")){
+				String tempTargetDirectory =groovy.get("targetDirectory").getAsString();
+
+				if(tempTargetDirectory!=null && tempTargetDirectory.length()>0){
+					Path finalPath = workspaceRoot.resolve(Paths.get(tempTargetDirectory));
+					if(!finalPath.equals(targetDirectory)) {
+						targetDirectory=finalPath;
+						change = true;
+					}
+				}
+			}
+			if (groovy.has("ignoredDirectory") && groovy.get("ignoredDirectory").isJsonArray()) {
+				JsonArray ignoredDirectory = groovy.get("ignoredDirectory").getAsJsonArray();
+				ignoredDirectory.forEach(element -> {
+					String path = element.getAsString();
+					if(path!=null && path.length()>0){
+						ignoredDirList.add(workspaceRoot.resolve(path));
+					}
+				});
+			}
+		}
+
+
+		if(!ignoredDirList.equals(ignoredDirectory)){
+			ignoredDirectory=ignoredDirList;
+			change=true;
 		}
 
 		if (!classpathList.equals(compilationUnitFactory.getAdditionalClasspathList())) {
 			compilationUnitFactory.setAdditionalClasspathList(classpathList);
+			change=true;
+		}
 
+
+		if(change)
+		{
 			createOrUpdateCompilationUnit();
 			compile();
 			visitAST();
@@ -271,7 +309,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			}
 		}
 
-		return result;
+	return result;
 	}
 
 	@Override
@@ -410,7 +448,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		}
 
 		GroovyLSCompilationUnit oldCompilationUnit = compilationUnit;
-		compilationUnit = compilationUnitFactory.create(workspaceRoot, fileContentsTracker);
+		compilationUnit = compilationUnitFactory.create(workspaceRoot, targetDirectory, ignoredDirectory,fileContentsTracker);
 		fileContentsTracker.resetChangedFiles();
 
 		if (compilationUnit != null) {
