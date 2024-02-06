@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import org.checkerframework.checker.units.qual.A;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -153,9 +154,9 @@ public class CompletionProvider {
 
 		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(importNode, ModuleNode.class,
 				ast);
-		String enclosingPackageName = enclosingModule.getPackageName();
-		List<String> importNames = enclosingModule.getImports().stream()
-				.map(otherImportNode -> otherImportNode.getClassName()).collect(Collectors.toList());
+		String enclosingPackageName = enclosingModule != null ? enclosingModule.getPackageName() : null;
+		List<String> importNames = enclosingModule != null ? enclosingModule.getImports().stream()
+				.map(ImportNode::getClassName).collect(Collectors.toList()) : new ArrayList<>();
 
 		List<CompletionItem> localClassItems = ast.getClassNodes().stream().filter(classNode -> {
 			String packageName = classNode.getPackageName();
@@ -408,9 +409,9 @@ public class CompletionProvider {
 
 		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
 				ast);
-		String enclosingPackageName = enclosingModule.getPackageName();
-		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
-				.collect(Collectors.toList());
+		String enclosingPackageName = enclosingModule != null ? enclosingModule.getPackageName() : null;
+		List<String> importNames = enclosingModule != null ? enclosingModule.getImports().stream().map(ImportNode::getClassName)
+				.collect(Collectors.toList()) : new ArrayList<>();
 
 		List<CompletionItem> localClassItems = ast.getClassNodes().stream().filter(classNode -> {
 			if (isIncomplete) {
