@@ -31,8 +31,8 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
 
 public class ReferenceProvider {
 	private ASTNodeVisitor ast;
@@ -54,10 +54,10 @@ public class ReferenceProvider {
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
 
-		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast);
+		List<ASTNode> references = GroovyLSASTUtils.getReferences(offsetNode, ast);
 		List<Location> locations = references.stream().map(node -> {
 			URI uri = ast.getURI(node);
-			return GroovyLanguageServerUtils.astNodeToLocation(node, uri);
+			return GroovyLSUtils.astNodeToLocation(node, uri);
 		}).filter(location -> location != null).collect(Collectors.toList());
 
 		return CompletableFuture.completedFuture(locations);

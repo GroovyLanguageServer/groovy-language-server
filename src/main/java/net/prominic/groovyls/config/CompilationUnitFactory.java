@@ -30,13 +30,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 
 import groovy.lang.GroovyClassLoader;
 import net.prominic.groovyls.compiler.control.GroovyLSCompilationUnit;
-import net.prominic.groovyls.compiler.control.io.StringReaderSourceWithURI;
+import net.prominic.groovyls.compiler.control.io.URIStringReaderSource;
 import net.prominic.groovyls.util.FileContentsTracker;
 
 public class CompilationUnitFactory implements ICompilationUnitFactory {
@@ -71,7 +72,7 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 		}
 
 		if (classLoader == null) {
-			classLoader = new GroovyClassLoader(ClassLoader.getSystemClassLoader().getParent(), config, true);
+			classLoader = new GroovyClassLoader(this.getClass().getClassLoader(), config, true);
 		}
 
 		Set<URI> changedUris = fileContentsTracker.getChangedURIs();
@@ -94,9 +95,7 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 			compilationUnit.removeSources(sourcesToRemove);
 		}
 
-		if (workspaceRoot != null) {
-			addDirectoryToCompilationUnit(workspaceRoot, compilationUnit, fileContentsTracker, changedUris);
-		} else {
+		if (workspaceRoot == null) {
 			final Set<URI> urisToAdd = changedUris;
 			fileContentsTracker.getOpenURIs().forEach(uri -> {
 				// if we're only tracking changes, skip all files that haven't
@@ -107,6 +106,8 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 				String contents = fileContentsTracker.getContents(uri);
 				addOpenFileToCompilationUnit(uri, contents, compilationUnit);
 			});
+		} else {
+			addDirectoryToCompilationUnit(workspaceRoot, compilationUnit, fileContentsTracker, changedUris);
 		}
 
 		return compilationUnit;
@@ -142,12 +143,15 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 			if (!file.exists()) {
 				continue;
 			}
-			if (file.isDirectory()) {
-				for (File child : file.listFiles()) {
-					if (!child.getName().endsWith(".jar") || !child.isFile()) {
-						continue;
+			if (file.isDirectory()  ) {
+				File[] files = file.listFiles();
+				if ( files != null ) {
+					for (File child : files) {
+						if (!child.getName().endsWith(".jar") || !child.isFile()) {
+							continue;
+						}
+						result.add(child.getPath());
 					}
-					result.add(child.getPath());
 				}
 			} else if (!mustBeDirectory && file.isFile()) {
 				if (file.getName().endsWith(".jar")) {
@@ -158,10 +162,10 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	}
 
 	protected void addDirectoryToCompilationUnit(Path dirPath, GroovyLSCompilationUnit compilationUnit,
-			FileContentsTracker fileContentsTracker, Set<URI> changedUris) {
-		try {
-			if (Files.exists(dirPath)) {
-				Files.walk(dirPath).forEach((filePath) -> {
+												 FileContentsTracker fileContentsTracker, Set<URI> changedUris) {
+		if (Files.exists(dirPath)) {
+			try (Stream<Path> stream = Files.walk(dirPath)){
+				stream.forEach((filePath) -> {
 					if (!filePath.toString().endsWith(FILE_EXTENSION_GROOVY)) {
 						return;
 					}
@@ -175,10 +179,10 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 						}
 					}
 				});
-			}
 
-		} catch (IOException e) {
-			System.err.println("Failed to walk directory for source files: " + dirPath);
+			} catch (IOException e) {
+				System.err.println("Failed to walk directory for source files: " + dirPath);
+			}
 		}
 		fileContentsTracker.getOpenURIs().forEach(uri -> {
 			Path openPath = Paths.get(uri);
@@ -196,7 +200,7 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 	protected void addOpenFileToCompilationUnit(URI uri, String contents, GroovyLSCompilationUnit compilationUnit) {
 		Path filePath = Paths.get(uri);
 		SourceUnit sourceUnit = new SourceUnit(filePath.toString(),
-				new StringReaderSourceWithURI(contents, uri, compilationUnit.getConfiguration()),
+				new URIStringReaderSource(contents, uri, compilationUnit.getConfiguration()),
 				compilationUnit.getConfiguration(), compilationUnit.getClassLoader(),
 				compilationUnit.getErrorCollector());
 		compilationUnit.addSource(sourceUnit);

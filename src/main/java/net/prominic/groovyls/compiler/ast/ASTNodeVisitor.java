@@ -95,24 +95,27 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
 import net.prominic.lsp.utils.Positions;
 import net.prominic.lsp.utils.Ranges;
 
 public class ASTNodeVisitor extends ClassCodeVisitorSupport {
-	private class ASTLookupKey {
+	private static class ASTLookupKey {
 		public ASTLookupKey(ASTNode node) {
 			this.node = node;
 		}
 
-		private ASTNode node;
+		private final ASTNode node;
 
 		@Override
 		public boolean equals(Object o) {
 			// some ASTNode subclasses, like ClassNode, override equals() with
 			// comparisons that are not strict. we need strict.
-			ASTLookupKey other = (ASTLookupKey) o;
-			return node == other.node;
+			if ( o instanceof ASTLookupKey ){
+				ASTLookupKey other = (ASTLookupKey) o;
+				return node == other.node;
+			}
+			return false;
 		}
 
 		@Override
@@ -121,7 +124,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	private class ASTNodeLookupData {
+	private static class ASTNodeLookupData {
 		public ASTNode parent;
 		public URI uri;
 	}
@@ -133,10 +136,10 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		return sourceUnit;
 	}
 
-	private Stack<ASTNode> stack = new Stack<>();
-	private Map<URI, List<ASTNode>> nodesByURI = new HashMap<>();
-	private Map<URI, List<ClassNode>> classNodesByURI = new HashMap<>();
-	private Map<ASTLookupKey, ASTNodeLookupData> lookup = new HashMap<>();
+	private final Stack<ASTNode> stack = new Stack<>();
+	private final Map<URI, List<ASTNode>> nodesByURI = new HashMap<>();
+	private final Map<URI, List<ClassNode>> classNodesByURI = new HashMap<>();
+	private final Map<ASTLookupKey, ASTNodeLookupData> lookup = new HashMap<>();
 
 	private void pushASTNode(ASTNode node) {
 		boolean isSynthetic = false;
@@ -200,7 +203,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 				// also, do this first because it's the fastest comparison
 				return false;
 			}
-			Range range = GroovyLanguageServerUtils.astNodeToRange(node);
+			Range range = GroovyLSUtils.astNodeToRange(node);
 			if (range == null) {
 				return false;
 			}
@@ -275,9 +278,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		nodesByURI.clear();
 		classNodesByURI.clear();
 		lookup.clear();
-		unit.iterator().forEachRemaining(sourceUnit -> {
-			visitSourceUnit(sourceUnit);
-		});
+		unit.iterator().forEachRemaining(this::visitSourceUnit);
 	}
 
 	public void visitCompilationUnit(CompilationUnit unit, Collection<URI> uris) {
@@ -317,9 +318,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	public void visitModule(ModuleNode node) {
 		pushASTNode(node);
 		try {
-			node.getClasses().forEach(classInUnit -> {
-				visitClass(classInUnit);
-			});
+			node.getClasses().forEach(this::visitClass);
 		} finally {
 			popASTNode();
 		}
@@ -380,6 +379,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitConstructor(ConstructorNode node) {
 		pushASTNode(node);
 		try {
@@ -392,6 +392,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitMethod(MethodNode node) {
 		pushASTNode(node);
 		try {
@@ -412,6 +413,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitField(FieldNode node) {
 		pushASTNode(node);
 		try {
@@ -421,6 +423,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitProperty(PropertyNode node) {
 		pushASTNode(node);
 		try {
@@ -432,6 +435,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 
 	// GroovyCodeVisitor
 
+	@Override
 	public void visitBlockStatement(BlockStatement node) {
 		pushASTNode(node);
 		try {
@@ -441,6 +445,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitForLoop(ForStatement node) {
 		pushASTNode(node);
 		try {
@@ -450,6 +455,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitWhileLoop(WhileStatement node) {
 		pushASTNode(node);
 		try {
@@ -459,6 +465,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitDoWhileLoop(DoWhileStatement node) {
 		pushASTNode(node);
 		try {
@@ -468,6 +475,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitIfElse(IfStatement node) {
 		pushASTNode(node);
 		try {
@@ -477,6 +485,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitExpressionStatement(ExpressionStatement node) {
 		pushASTNode(node);
 		try {
@@ -486,6 +495,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitReturnStatement(ReturnStatement node) {
 		pushASTNode(node);
 		try {
@@ -495,6 +505,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitAssertStatement(AssertStatement node) {
 		pushASTNode(node);
 		try {
@@ -504,6 +515,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitTryCatchFinally(TryCatchStatement node) {
 		pushASTNode(node);
 		try {
@@ -513,6 +525,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitEmptyStatement(EmptyStatement node) {
 		pushASTNode(node);
 		try {
@@ -522,6 +535,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitSwitch(SwitchStatement node) {
 		pushASTNode(node);
 		try {
@@ -531,6 +545,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitCaseStatement(CaseStatement node) {
 		pushASTNode(node);
 		try {
@@ -540,6 +555,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitBreakStatement(BreakStatement node) {
 		pushASTNode(node);
 		try {
@@ -549,6 +565,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitContinueStatement(ContinueStatement node) {
 		pushASTNode(node);
 		try {
@@ -558,6 +575,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitSynchronizedStatement(SynchronizedStatement node) {
 		pushASTNode(node);
 		try {
@@ -567,6 +585,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitThrowStatement(ThrowStatement node) {
 		pushASTNode(node);
 		try {
@@ -576,6 +595,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitMethodCallExpression(MethodCallExpression node) {
 		pushASTNode(node);
 		try {
@@ -585,6 +605,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitStaticMethodCallExpression(StaticMethodCallExpression node) {
 		pushASTNode(node);
 		try {
@@ -594,6 +615,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitConstructorCallExpression(ConstructorCallExpression node) {
 		pushASTNode(node);
 		try {
@@ -603,6 +625,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitBinaryExpression(BinaryExpression node) {
 		pushASTNode(node);
 		try {
@@ -612,6 +635,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitTernaryExpression(TernaryExpression node) {
 		pushASTNode(node);
 		try {
@@ -621,6 +645,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitShortTernaryExpression(ElvisOperatorExpression node) {
 		pushASTNode(node);
 		try {
@@ -630,6 +655,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitPostfixExpression(PostfixExpression node) {
 		pushASTNode(node);
 		try {
@@ -639,6 +665,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitPrefixExpression(PrefixExpression node) {
 		pushASTNode(node);
 		try {
@@ -648,6 +675,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitBooleanExpression(BooleanExpression node) {
 		pushASTNode(node);
 		try {
@@ -657,6 +685,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitNotExpression(NotExpression node) {
 		pushASTNode(node);
 		try {
@@ -666,6 +695,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitClosureExpression(ClosureExpression node) {
 		pushASTNode(node);
 		try {
@@ -675,6 +705,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitTupleExpression(TupleExpression node) {
 		pushASTNode(node);
 		try {
@@ -684,6 +715,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitListExpression(ListExpression node) {
 		pushASTNode(node);
 		try {
@@ -693,6 +725,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitArrayExpression(ArrayExpression node) {
 		pushASTNode(node);
 		try {
@@ -702,6 +735,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitMapExpression(MapExpression node) {
 		pushASTNode(node);
 		try {
@@ -711,6 +745,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitMapEntryExpression(MapEntryExpression node) {
 		pushASTNode(node);
 		try {
@@ -720,6 +755,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitRangeExpression(RangeExpression node) {
 		pushASTNode(node);
 		try {
@@ -729,6 +765,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitSpreadExpression(SpreadExpression node) {
 		pushASTNode(node);
 		try {
@@ -738,6 +775,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitSpreadMapExpression(SpreadMapExpression node) {
 		pushASTNode(node);
 		try {
@@ -747,6 +785,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitMethodPointerExpression(MethodPointerExpression node) {
 		pushASTNode(node);
 		try {
@@ -756,6 +795,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitUnaryMinusExpression(UnaryMinusExpression node) {
 		pushASTNode(node);
 		try {
@@ -765,6 +805,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitUnaryPlusExpression(UnaryPlusExpression node) {
 		pushASTNode(node);
 		try {
@@ -774,6 +815,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitBitwiseNegationExpression(BitwiseNegationExpression node) {
 		pushASTNode(node);
 		try {
@@ -783,6 +825,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitCastExpression(CastExpression node) {
 		pushASTNode(node);
 		try {
@@ -792,6 +835,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitConstantExpression(ConstantExpression node) {
 		pushASTNode(node);
 		try {
@@ -801,6 +845,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitClassExpression(ClassExpression node) {
 		pushASTNode(node);
 		try {
@@ -810,6 +855,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitVariableExpression(VariableExpression node) {
 		pushASTNode(node);
 		try {
@@ -829,6 +875,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	// }
 	// }
 
+	@Override
 	public void visitPropertyExpression(PropertyExpression node) {
 		pushASTNode(node);
 		try {
@@ -838,6 +885,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitAttributeExpression(AttributeExpression node) {
 		pushASTNode(node);
 		try {
@@ -847,6 +895,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitFieldExpression(FieldExpression node) {
 		pushASTNode(node);
 		try {
@@ -856,6 +905,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitGStringExpression(GStringExpression node) {
 		pushASTNode(node);
 		try {
@@ -865,6 +915,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitCatchStatement(CatchStatement node) {
 		pushASTNode(node);
 		try {
@@ -884,6 +935,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 	// }
 	// }
 
+	@Override
 	public void visitClosureListExpression(ClosureListExpression node) {
 		pushASTNode(node);
 		try {
@@ -893,6 +945,7 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
+	@Override
 	public void visitBytecodeExpression(BytecodeExpression node) {
 		pushASTNode(node);
 		try {

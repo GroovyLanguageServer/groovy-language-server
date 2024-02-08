@@ -36,6 +36,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -103,7 +104,7 @@ import net.prominic.groovyls.providers.SignatureHelpProvider;
 import net.prominic.groovyls.providers.TypeDefinitionProvider;
 import net.prominic.groovyls.providers.WorkspaceSymbolProvider;
 import net.prominic.groovyls.util.FileContentsTracker;
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
 import net.prominic.lsp.utils.Positions;
 
 public class GroovyServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
@@ -112,11 +113,11 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private LanguageClient languageClient;
 
 	private Path workspaceRoot;
-	private ICompilationUnitFactory compilationUnitFactory;
+	private final ICompilationUnitFactory compilationUnitFactory;
 	private GroovyLSCompilationUnit compilationUnit;
 	private ASTNodeVisitor astVisitor;
 	private Map<URI, List<Diagnostic>> prevDiagnosticsByFile;
-	private FileContentsTracker fileContentsTracker = new FileContentsTracker();
+	private final FileContentsTracker fileContentsTracker = new FileContentsTracker();
 	private ScanResult classGraphScanResult = null;
 	private GroovyClassLoader classLoader = null;
 	private URI previousContext = null;
@@ -236,7 +237,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			int offset = Positions.getOffset(originalSource, position);
 			String lineBeforeOffset = originalSource.substring(offset - position.getCharacter(), offset);
 			Matcher matcher = PATTERN_CONSTRUCTOR_CALL.matcher(lineBeforeOffset);
-			TextDocumentContentChangeEvent changeEvent = null;
+			TextDocumentContentChangeEvent changeEvent;
 			if (matcher.matches()) {
 				changeEvent = new TextDocumentContentChangeEvent(new Range(position, position), 0, "a()");
 			} else {
@@ -255,7 +256,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			didChange(didChangeParams);
 		}
 
-		CompletableFuture<Either<List<CompletionItem>, CompletionList>> result = null;
+		CompletableFuture<Either<List<CompletionItem>, CompletionList>> result;
 		try {
 			CompletionProvider provider = new CompletionProvider(astVisitor, classGraphScanResult);
 			result = provider.provideCompletion(params.getTextDocument(), params.getPosition(), params.getContext());
@@ -398,8 +399,8 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		if (compilationUnit != null) {
 			File targetDirectory = compilationUnit.getConfiguration().getTargetDirectory();
 			if (targetDirectory != null && targetDirectory.exists()) {
-				try {
-					Files.walk(targetDirectory.toPath()).sorted(Comparator.reverseOrder()).map(Path::toFile)
+				try (Stream<Path> stream = Files.walk(targetDirectory.toPath())){
+					stream.sorted(Comparator.reverseOrder()).map(Path::toFile)
 							.forEach(File::delete);
 				} catch (IOException e) {
 					System.err.println("Failed to delete target directory: " + targetDirectory.getAbsolutePath());
@@ -413,7 +414,9 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 		compilationUnit = compilationUnitFactory.create(workspaceRoot, fileContentsTracker);
 		fileContentsTracker.resetChangedFiles();
 
-		if (compilationUnit != null) {
+		if (compilationUnit == null) {
+			classGraphScanResult = null;
+		} else {
 			File targetDirectory = compilationUnit.getConfiguration().getTargetDirectory();
 			if (targetDirectory != null && !targetDirectory.exists() && !targetDirectory.mkdirs()) {
 				System.err.println("Failed to create target directory: " + targetDirectory.getAbsolutePath());
@@ -430,8 +433,6 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 					classGraphScanResult = null;
 				}
 			}
-		} else {
-			classGraphScanResult = null;
 		}
 
 		return compilationUnit != null && compilationUnit.equals(oldCompilationUnit);
@@ -468,15 +469,12 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 			compilationUnit.compile(Phases.CANONICALIZATION);
 		} catch (CompilationFailedException e) {
 			// ignore
-		} catch (GroovyBugError e) {
-			System.err.println("Unexpected exception in language server when compiling Groovy.");
-			e.printStackTrace(System.err);
-		} catch (Exception e) {
+		} catch (GroovyBugError | Exception e) {
 			System.err.println("Unexpected exception in language server when compiling Groovy.");
 			e.printStackTrace(System.err);
 		}
 		Set<PublishDiagnosticsParams> diagnostics = handleErrorCollector(compilationUnit.getErrorCollector());
-		diagnostics.stream().forEach(languageClient::publishDiagnostics);
+		diagnostics.forEach(languageClient::publishDiagnostics);
 	}
 
 	private Set<PublishDiagnosticsParams> handleErrorCollector(ErrorCollector collector) {
@@ -488,7 +486,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 					.forEach((Object message) -> {
 						SyntaxErrorMessage syntaxErrorMessage = (SyntaxErrorMessage) message;
 						SyntaxException cause = syntaxErrorMessage.getCause();
-						Range range = GroovyLanguageServerUtils.syntaxExceptionToRange(cause);
+						Range range = GroovyLSUtils.syntaxExceptionToRange(cause);
 						Diagnostic diagnostic = new Diagnostic();
 						diagnostic.setRange(range);
 						diagnostic.setSeverity(cause.isFatal() ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning);

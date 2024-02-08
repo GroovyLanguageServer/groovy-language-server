@@ -39,14 +39,13 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SignatureHelp;
 import org.eclipse.lsp4j.SignatureInformation;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import groovy.lang.groovydoc.Groovydoc;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
-import net.prominic.groovyls.compiler.util.GroovydocUtils;
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
-import net.prominic.groovyls.util.GroovyNodeToStringUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSDocUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
+import net.prominic.groovyls.util.GroovyLSNodeUtils;
 
 public class SignatureHelpProvider {
 	private ASTNodeVisitor ast;
@@ -83,7 +82,7 @@ public class SignatureHelpProvider {
 			return CompletableFuture.completedFuture(new SignatureHelp(Collections.emptyList(), -1, -1));
 		}
 
-		List<MethodNode> methods = GroovyASTUtils.getMethodOverloadsFromCallExpression(methodCall, ast);
+		List<MethodNode> methods = GroovyLSASTUtils.getMethodOverloadsFromCallExpression(methodCall, ast);
 		if (methods.isEmpty()) {
 			return CompletableFuture.completedFuture(new SignatureHelp(Collections.emptyList(), -1, -1));
 		}
@@ -95,21 +94,21 @@ public class SignatureHelpProvider {
 			for (int i = 0; i < methodParams.length; i++) {
 				Parameter methodParam = methodParams[i];
 				ParameterInformation paramInfo = new ParameterInformation();
-				paramInfo.setLabel(GroovyNodeToStringUtils.variableToString(methodParam, ast));
+				paramInfo.setLabel(GroovyLSNodeUtils.variableToString(methodParam, ast));
 				parameters.add(paramInfo);
 			}
 			SignatureInformation sigInfo = new SignatureInformation();
-			sigInfo.setLabel(GroovyNodeToStringUtils.methodToString(method, ast));
+			sigInfo.setLabel(GroovyLSNodeUtils.methodToString(method, ast));
 			sigInfo.setParameters(parameters);
 			Groovydoc methodGroovydoc = method.getGroovydoc();
-			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(methodGroovydoc);
+			String markdownDocs = GroovyLSDocUtils.groovydocToMarkdownDescription(methodGroovydoc);
 			if (markdownDocs != null) {
 				sigInfo.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}
 			sigInfos.add(sigInfo);
 		}
 
-		MethodNode bestMethod = GroovyASTUtils.getMethodFromCallExpression(methodCall, ast, activeParamIndex);
+		MethodNode bestMethod = GroovyLSASTUtils.getMethodFromCallExpression(methodCall, ast, activeParamIndex);
 		int activeSignature = methods.indexOf(bestMethod);
 
 		return CompletableFuture.completedFuture(new SignatureHelp(sigInfos, activeSignature, activeParamIndex));
@@ -118,7 +117,7 @@ public class SignatureHelpProvider {
 	private int getActiveParameter(Position position, List<Expression> expressions) {
 		for (int i = 0; i < expressions.size(); i++) {
 			Expression expr = expressions.get(i);
-			Range exprRange = GroovyLanguageServerUtils.astNodeToRange(expr);
+			Range exprRange = GroovyLSUtils.astNodeToRange(expr);
 			if (exprRange == null) {
 				continue;
 			}

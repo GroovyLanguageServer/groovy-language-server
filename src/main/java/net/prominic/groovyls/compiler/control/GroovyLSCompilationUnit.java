@@ -41,10 +41,10 @@ public class GroovyLSCompilationUnit extends CompilationUnit {
 
 	public GroovyLSCompilationUnit(CompilerConfiguration config, CodeSource security, GroovyClassLoader loader) {
 		super(config, security, loader);
-		this.errorCollector = new LanguageServerErrorCollector(config);
+		this.errorCollector = new GroovyLSErrorCollector(config);
 	}
 
-	public void setErrorCollector(LanguageServerErrorCollector errorCollector) {
+	public void setErrorCollector(GroovyLSErrorCollector errorCollector) {
 		this.errorCollector = errorCollector;
 	}
 
@@ -66,7 +66,7 @@ public class GroovyLSCompilationUnit extends CompilationUnit {
 				ast.addModule(module);
 			}
 		}
-		LanguageServerErrorCollector lsErrorCollector = (LanguageServerErrorCollector) errorCollector;
+		GroovyLSErrorCollector lsErrorCollector = (GroovyLSErrorCollector) errorCollector;
 		lsErrorCollector.clear();
 	}
 

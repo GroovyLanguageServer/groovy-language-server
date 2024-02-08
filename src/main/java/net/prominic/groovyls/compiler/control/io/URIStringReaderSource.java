@@ -24,10 +24,10 @@ import java.net.URI;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.io.StringReaderSource;
 
-public class StringReaderSourceWithURI extends StringReaderSource {
-	private URI uri;
+public class URIStringReaderSource extends StringReaderSource {
+	private final URI uri;
 
-	public StringReaderSourceWithURI(String string, URI uri, CompilerConfiguration configuration) {
+	public URIStringReaderSource(String string, URI uri, CompilerConfiguration configuration) {
 		super(string, configuration);
 		this.uri = uri;
 	}

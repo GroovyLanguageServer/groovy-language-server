@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import org.checkerframework.checker.units.qual.A;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -62,9 +61,9 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.PackageInfo;
 import io.github.classgraph.ScanResult;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
-import net.prominic.groovyls.compiler.util.GroovydocUtils;
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSDocUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
 
 public class CompletionProvider {
 	private ASTNodeVisitor ast;
@@ -124,7 +123,7 @@ public class CompletionProvider {
 
 	private void populateItemsFromPropertyExpression(PropertyExpression propExpr, Position position,
 			List<CompletionItem> items) {
-		Range propertyRange = GroovyLanguageServerUtils.astNodeToRange(propExpr.getProperty());
+		Range propertyRange = GroovyLSUtils.astNodeToRange(propExpr.getProperty());
 		if (propertyRange == null) {
 			return;
 		}
@@ -134,7 +133,7 @@ public class CompletionProvider {
 
 	private void populateItemsFromMethodCallExpression(MethodCallExpression methodCallExpr, Position position,
 			List<CompletionItem> items) {
-		Range methodRange = GroovyLanguageServerUtils.astNodeToRange(methodCallExpr.getMethod());
+		Range methodRange = GroovyLSUtils.astNodeToRange(methodCallExpr.getMethod());
 		if (methodRange == null) {
 			return;
 		}
@@ -143,7 +142,7 @@ public class CompletionProvider {
 	}
 
 	private void populateItemsFromImportNode(ImportNode importNode, Position position, List<CompletionItem> items) {
-		Range importRange = GroovyLanguageServerUtils.astNodeToRange(importNode);
+		Range importRange = GroovyLSUtils.astNodeToRange(importNode);
 		if (importRange == null) {
 			return;
 		}
@@ -152,7 +151,7 @@ public class CompletionProvider {
 				importRange.getEnd().getCharacter() - importNode.getType().getName().length()));
 		String importText = getMemberName(importNode.getType().getName(), importRange, position);
 
-		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(importNode, ModuleNode.class,
+		ModuleNode enclosingModule = (ModuleNode) GroovyLSASTUtils.getEnclosingNodeOfType(importNode, ModuleNode.class,
 				ast);
 		String enclosingPackageName = enclosingModule != null ? enclosingModule.getPackageName() : null;
 		List<String> importNames = enclosingModule != null ? enclosingModule.getImports().stream()
@@ -176,11 +175,11 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classNode.getName());
 			item.setTextEdit(Either.forLeft(new TextEdit(importRange, classNode.getName())));
-			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
+			item.setKind(GroovyLSUtils.astNodeToCompletionItemKind(classNode));
 			if (classNode.getNameWithoutPackage().startsWith(importText)) {
 				item.setSortText(classNode.getNameWithoutPackage());
 			}
-			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(classNode.getGroovydoc());
+			String markdownDocs = GroovyLSDocUtils.groovydocToMarkdownDescription(classNode.getGroovydoc());
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}
@@ -242,7 +241,7 @@ public class CompletionProvider {
 			return;
 		}
 		ClassNode parentClassNode = (ClassNode) parentNode;
-		Range classRange = GroovyLanguageServerUtils.astNodeToRange(classNode);
+		Range classRange = GroovyLSUtils.astNodeToRange(classNode);
 		if (classRange == null) {
 			return;
 		}
@@ -256,7 +255,7 @@ public class CompletionProvider {
 
 	private void populateItemsFromConstructorCallExpression(ConstructorCallExpression constructorCallExpr,
 			Position position, List<CompletionItem> items) {
-		Range typeRange = GroovyLanguageServerUtils.astNodeToRange(constructorCallExpr.getType());
+		Range typeRange = GroovyLSUtils.astNodeToRange(constructorCallExpr.getType());
 		if (typeRange == null) {
 			return;
 		}
@@ -266,7 +265,7 @@ public class CompletionProvider {
 
 	private void populateItemsFromVariableExpression(VariableExpression varExpr, Position position,
 			List<CompletionItem> items) {
-		Range varRange = GroovyLanguageServerUtils.astNodeToRange(varExpr);
+		Range varRange = GroovyLSUtils.astNodeToRange(varExpr);
 		if (varRange == null) {
 			return;
 		}
@@ -287,8 +286,8 @@ public class CompletionProvider {
 		}).map(property -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(property.getName());
-			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(property));
-			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(property.getGroovydoc());
+			item.setKind(GroovyLSUtils.astNodeToCompletionItemKind(property));
+			String markdownDocs = GroovyLSDocUtils.groovydocToMarkdownDescription(property.getGroovydoc());
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}
@@ -306,8 +305,8 @@ public class CompletionProvider {
 		}).map(field -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(field.getName());
-			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(field));
-			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(field.getGroovydoc());
+			item.setKind(GroovyLSUtils.astNodeToCompletionItemKind(field));
+			String markdownDocs = GroovyLSDocUtils.groovydocToMarkdownDescription(field.getGroovydoc());
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}
@@ -329,8 +328,8 @@ public class CompletionProvider {
 		}).map(method -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(method.getName());
-			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(method));
-			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(method.getGroovydoc());
+			item.setKind(GroovyLSUtils.astNodeToCompletionItemKind(method));
+			String markdownDocs = GroovyLSDocUtils.groovydocToMarkdownDescription(method.getGroovydoc());
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}
@@ -342,11 +341,11 @@ public class CompletionProvider {
 	private void populateItemsFromExpression(Expression leftSide, String memberNamePrefix, List<CompletionItem> items) {
 		Set<String> existingNames = new HashSet<>();
 
-		List<PropertyNode> properties = GroovyASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
-		List<FieldNode> fields = GroovyASTUtils.getFieldsForLeftSideOfPropertyExpression(leftSide, ast);
+		List<PropertyNode> properties = GroovyLSASTUtils.getPropertiesForLeftSideOfPropertyExpression(leftSide, ast);
+		List<FieldNode> fields = GroovyLSASTUtils.getFieldsForLeftSideOfPropertyExpression(leftSide, ast);
 		populateItemsFromPropertiesAndFields(properties, fields, memberNamePrefix, existingNames, items);
 
-		List<MethodNode> methods = GroovyASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
+		List<MethodNode> methods = GroovyLSASTUtils.getMethodsForLeftSideOfPropertyExpression(leftSide, ast);
 		populateItemsFromMethods(methods, memberNamePrefix, existingNames, items);
 	}
 
@@ -364,10 +363,10 @@ public class CompletionProvider {
 		}).map(variable -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(variable.getName());
-			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
+			item.setKind(GroovyLSUtils.astNodeToCompletionItemKind((ASTNode) variable));
 			if (variable instanceof AnnotatedNode) {
 				AnnotatedNode annotatedVar = (AnnotatedNode) variable;
-				String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(annotatedVar.getGroovydoc());
+				String markdownDocs = GroovyLSDocUtils.groovydocToMarkdownDescription(annotatedVar.getGroovydoc());
 				if (markdownDocs != null) {
 					item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 				}
@@ -405,9 +404,9 @@ public class CompletionProvider {
 
 	private void populateTypes(ASTNode offsetNode, String namePrefix, Set<String> existingNames, boolean includeClasses,
 			boolean includeInterfaces, boolean includeEnums, List<CompletionItem> items) {
-		Range addImportRange = GroovyASTUtils.findAddImportRange(offsetNode, ast);
+		Range addImportRange = GroovyLSASTUtils.findAddImportRange(offsetNode, ast);
 
-		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
+		ModuleNode enclosingModule = (ModuleNode) GroovyLSASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
 				ast);
 		String enclosingPackageName = enclosingModule != null ? enclosingModule.getPackageName() : null;
 		List<String> importNames = enclosingModule != null ? enclosingModule.getImports().stream().map(ImportNode::getClassName)
@@ -433,9 +432,9 @@ public class CompletionProvider {
 			String packageName = classNode.getPackageName();
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classNode.getNameWithoutPackage());
-			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
+			item.setKind(GroovyLSUtils.astNodeToCompletionItemKind(classNode));
 			item.setDetail(packageName);
-			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(classNode.getGroovydoc());
+			String markdownDocs = GroovyLSDocUtils.groovydocToMarkdownDescription(classNode.getGroovydoc());
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}

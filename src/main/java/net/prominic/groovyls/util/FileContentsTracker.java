@@ -39,7 +39,7 @@ import net.prominic.lsp.utils.Positions;
 
 public class FileContentsTracker {
 
-	private Map<URI, String> openFiles = new HashMap<>();
+	private final Map<URI, String> openFiles = new HashMap<>();
 	private Set<URI> changedFiles = new HashSet<>();
 
 	public Set<URI> getOpenURIs() {
@@ -79,7 +79,7 @@ public class FileContentsTracker {
 			int offsetStart = Positions.getOffset(oldText, change.getRange().getStart());
 			int offsetEnd = Positions.getOffset(oldText, change.getRange().getEnd());
 			StringBuilder builder = new StringBuilder();
-			builder.append(oldText.substring(0, offsetStart));
+			builder.append(oldText, 0, offsetStart);
 			builder.append(change.getText());
 			builder.append(oldText.substring(offsetEnd));
 			openFiles.put(uri, builder.toString());
@@ -95,24 +95,15 @@ public class FileContentsTracker {
 
 	public String getContents(URI uri) {
 		if (!openFiles.containsKey(uri)) {
-			BufferedReader reader = null;
-			try {
-				reader = Files.newBufferedReader(Paths.get(uri));
+			try (BufferedReader reader = Files.newBufferedReader(Paths.get(uri))) {
 				StringBuilder builder = new StringBuilder();
-				int next = -1;
+				int next;
 				while ((next = reader.read()) != -1) {
 					builder.append((char) next);
 				}
 				return builder.toString();
 			} catch (IOException e) {
 				return null;
-			} finally {
-				if (reader != null) {
-					try {
-						reader.close();
-					} catch (IOException e) {
-					}
-				}
 			}
 		}
 		return openFiles.get(uri);

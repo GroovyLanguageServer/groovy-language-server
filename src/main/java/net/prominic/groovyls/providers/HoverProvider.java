@@ -35,9 +35,9 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 
 import groovy.lang.groovydoc.Groovydoc;
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
-import net.prominic.groovyls.compiler.util.GroovydocUtils;
-import net.prominic.groovyls.util.GroovyNodeToStringUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSDocUtils;
+import net.prominic.groovyls.util.GroovyLSNodeUtils;
 
 public class HoverProvider {
 	private ASTNodeVisitor ast;
@@ -59,7 +59,7 @@ public class HoverProvider {
 			return CompletableFuture.completedFuture(null);
 		}
 
-		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, false, ast);
+		ASTNode definitionNode = GroovyLSASTUtils.getDefinition(offsetNode, false, ast);
 		if (definitionNode == null) {
 			return CompletableFuture.completedFuture(null);
 		}
@@ -73,7 +73,7 @@ public class HoverProvider {
 		if (definitionNode instanceof AnnotatedNode) {
 			AnnotatedNode annotatedNode = (AnnotatedNode) definitionNode;
 			Groovydoc groovydoc = annotatedNode.getGroovydoc();
-			documentation = GroovydocUtils.groovydocToMarkdownDescription(groovydoc);
+			documentation = GroovyLSDocUtils.groovydocToMarkdownDescription(groovydoc);
 		}
 
 		StringBuilder contentsBuilder = new StringBuilder();
@@ -96,13 +96,13 @@ public class HoverProvider {
 	private String getContent(ASTNode hoverNode) {
 		if (hoverNode instanceof ClassNode) {
 			ClassNode classNode = (ClassNode) hoverNode;
-			return GroovyNodeToStringUtils.classToString(classNode, ast);
+			return GroovyLSNodeUtils.classToString(classNode, ast);
 		} else if (hoverNode instanceof MethodNode) {
 			MethodNode methodNode = (MethodNode) hoverNode;
-			return GroovyNodeToStringUtils.methodToString(methodNode, ast);
+			return GroovyLSNodeUtils.methodToString(methodNode, ast);
 		} else if (hoverNode instanceof Variable) {
 			Variable varNode = (Variable) hoverNode;
-			return GroovyNodeToStringUtils.variableToString(varNode, ast);
+			return GroovyLSNodeUtils.variableToString(varNode, ast);
 		} else {
 			System.err.println("*** hover not available for node: " + hoverNode);
 		}

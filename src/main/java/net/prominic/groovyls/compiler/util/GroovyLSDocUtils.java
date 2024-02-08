@@ -21,7 +21,7 @@ package net.prominic.groovyls.compiler.util;
 
 import groovy.lang.groovydoc.Groovydoc;
 
-public class GroovydocUtils {
+public class GroovyLSDocUtils {
 	public static String groovydocToMarkdownDescription(Groovydoc groovydoc) {
 		if (groovydoc == null || !groovydoc.isPresent()) {
 			return null;
@@ -37,7 +37,7 @@ public class GroovydocUtils {
 				lines[0] = lines[0].substring(0, c);
 			}
 		}
-		// strip start of groovydoc coment
+		// strip start of groovydoc comment
 		String line = lines[0];
 		int lengthToRemove = Math.min(line.length(), 3);
 		line = line.substring(lengthToRemove);

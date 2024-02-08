@@ -33,8 +33,8 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.eclipse.lsp4j.SymbolInformation;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
 
 public class WorkspaceSymbolProvider {
 	private ASTNodeVisitor ast;
@@ -74,20 +74,20 @@ public class WorkspaceSymbolProvider {
 			URI uri = ast.getURI(node);
 			if (node instanceof ClassNode) {
 				ClassNode classNode = (ClassNode) node;
-				return GroovyLanguageServerUtils.astNodeToSymbolInformation(classNode, uri, null);
+				return GroovyLSUtils.astNodeToSymbolInformation(classNode, uri, null);
 			}
-			ClassNode classNode = (ClassNode) GroovyASTUtils.getEnclosingNodeOfType(node, ClassNode.class, ast);
+			ClassNode classNode = (ClassNode) GroovyLSASTUtils.getEnclosingNodeOfType(node, ClassNode.class, ast);
 			if (node instanceof MethodNode) {
 				MethodNode methodNode = (MethodNode) node;
-				return GroovyLanguageServerUtils.astNodeToSymbolInformation(methodNode, uri, classNode.getName());
+				return GroovyLSUtils.astNodeToSymbolInformation(methodNode, uri, classNode.getName());
 			}
 			if (node instanceof PropertyNode) {
 				PropertyNode propNode = (PropertyNode) node;
-				return GroovyLanguageServerUtils.astNodeToSymbolInformation(propNode, uri, classNode.getName());
+				return GroovyLSUtils.astNodeToSymbolInformation(propNode, uri, classNode.getName());
 			}
 			if (node instanceof FieldNode) {
 				FieldNode fieldNode = (FieldNode) node;
-				return GroovyLanguageServerUtils.astNodeToSymbolInformation(fieldNode, uri, classNode.getName());
+				return GroovyLSUtils.astNodeToSymbolInformation(fieldNode, uri, classNode.getName());
 			}
 			// this should never happen
 			return null;
