@@ -26,6 +26,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.CompletionOptions;
@@ -58,7 +59,7 @@ public class GroovyLanguageServer implements LanguageServer, LanguageClientAware
         launcher.startListening();
     }
 
-    private GroovyServices groovyServices;
+    private final GroovyServices groovyServices;
 
     public GroovyLanguageServer() {
         this(new CompilationUnitFactory());
@@ -77,7 +78,7 @@ public class GroovyLanguageServer implements LanguageServer, LanguageClientAware
             groovyServices.setWorkspaceRoot(workspaceRoot);
         }
 
-        CompletionOptions completionOptions = new CompletionOptions(false, Arrays.asList("."));
+        CompletionOptions completionOptions = new CompletionOptions(false, Collections.singletonList("."));
         ServerCapabilities serverCapabilities = new ServerCapabilities();
         serverCapabilities.setCompletionProvider(completionOptions);
         serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);

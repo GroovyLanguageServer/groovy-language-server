@@ -32,8 +32,8 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
 
 public class TypeDefinitionProvider {
 	private ASTNodeVisitor ast;
@@ -55,7 +55,7 @@ public class TypeDefinitionProvider {
 			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
 
-		ASTNode definitionNode = GroovyASTUtils.getTypeDefinition(offsetNode, ast);
+		ASTNode definitionNode = GroovyLSASTUtils.getTypeDefinition(offsetNode, ast);
 		if (definitionNode == null || definitionNode.getLineNumber() == -1 || definitionNode.getColumnNumber() == -1) {
 			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
@@ -65,7 +65,7 @@ public class TypeDefinitionProvider {
 			definitionURI = uri;
 		}
 
-		Location location = GroovyLanguageServerUtils.astNodeToLocation(definitionNode, definitionURI);
+		Location location = GroovyLSUtils.astNodeToLocation(definitionNode, definitionURI);
 		if (location == null) {
 			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}

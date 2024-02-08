@@ -48,9 +48,6 @@ public class Positions {
 				int readLines = 0;
 				while (true) {
 					char currentChar = (char) reader.read();
-					if (currentChar == -1) {
-						return -1;
-					}
 					currentIndex++;
 					if (currentChar == '\n') {
 						readLines++;
@@ -64,7 +61,7 @@ public class Positions {
 			}
 			try {
 				reader.close();
-			} catch (IOException e) {
+			} catch (IOException ignore) {
 			}
 		}
 		return currentIndex + character;

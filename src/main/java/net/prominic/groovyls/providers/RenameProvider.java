@@ -47,9 +47,9 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
 import net.prominic.groovyls.util.FileContentsTracker;
-import net.prominic.groovyls.util.GroovyLanguageServerUtils;
+import net.prominic.groovyls.util.GroovyLSUtils;
 import net.prominic.lsp.utils.Ranges;
 
 public class RenameProvider {
@@ -81,7 +81,7 @@ public class RenameProvider {
 			return CompletableFuture.completedFuture(workspaceEdit);
 		}
 
-		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast);
+		List<ASTNode> references = GroovyLSASTUtils.getReferences(offsetNode, ast);
 		references.forEach(node -> {
 			URI uri = ast.getURI(node);
 			if (uri == null) {
@@ -93,7 +93,7 @@ public class RenameProvider {
 				// can't find the text? skip it
 				return;
 			}
-			Range range = GroovyLanguageServerUtils.astNodeToRange(node);
+			Range range = GroovyLSUtils.astNodeToRange(node);
 			if (range == null) {
 				// can't find the range? skip it
 				return;
@@ -152,7 +152,7 @@ public class RenameProvider {
 	}
 
 	private String getPartialNodeText(URI uri, ASTNode node) {
-		Range range = GroovyLanguageServerUtils.astNodeToRange(node);
+		Range range = GroovyLSUtils.astNodeToRange(node);
 		if (range == null) {
 			return null;
 		}

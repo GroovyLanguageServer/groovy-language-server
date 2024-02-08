@@ -27,10 +27,11 @@ import org.codehaus.groovy.control.ErrorCollector;
  * A special ErrorCollector for language servers that can clear all errors and
  * does not throw exceptions.
  */
-public class LanguageServerErrorCollector extends ErrorCollector {
+public class GroovyLSErrorCollector extends ErrorCollector {
+
     private static final long serialVersionUID = 1L;
 
-    public LanguageServerErrorCollector(CompilerConfiguration configuration) {
+    public GroovyLSErrorCollector(CompilerConfiguration configuration) {
         super(configuration);
     }
 

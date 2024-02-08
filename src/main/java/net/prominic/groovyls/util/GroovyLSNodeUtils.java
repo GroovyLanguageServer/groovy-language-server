@@ -28,9 +28,9 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
-import net.prominic.groovyls.compiler.util.GroovyASTUtils;
+import net.prominic.groovyls.compiler.util.GroovyLSASTUtils;
 
-public class GroovyNodeToStringUtils {
+public class GroovyLSNodeUtils {
 	private static final String JAVA_OBJECT = "java.lang.Object";
 
 	public static String classToString(ClassNode classNode, ASTNodeVisitor ast) {
@@ -146,7 +146,7 @@ public class GroovyNodeToStringUtils {
 		}
 		ClassNode varType = null;
 		if (variable instanceof ASTNode) {
-			varType = GroovyASTUtils.getTypeOfNode((ASTNode) variable, ast);
+			varType = GroovyLSASTUtils.getTypeOfNode((ASTNode) variable, ast);
 		} else {
 			varType = variable.getType();
 		}

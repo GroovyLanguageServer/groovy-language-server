@@ -35,7 +35,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.SymbolKind;
 
-public class GroovyLanguageServerUtils {
+public class GroovyLSUtils {
 	/**
 	 * Converts a Groovy position to a LSP position.
 	 * 
