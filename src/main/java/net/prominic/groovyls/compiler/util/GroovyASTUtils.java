@@ -19,20 +19,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.util;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.ImportNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -59,7 +49,11 @@ public class GroovyASTUtils {
             if (nodeType.isInstance(current)) {
                 return current;
             }
-            current = astVisitor.getParent(current);
+            ASTNode newParent = astVisitor.getParent(current);
+            if(newParent!=null && newParent.equals(current)){
+                break;
+            }
+            current = newParent;
         }
         return null;
     }
