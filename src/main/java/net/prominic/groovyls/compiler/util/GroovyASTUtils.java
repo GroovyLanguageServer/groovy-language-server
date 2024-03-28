@@ -22,6 +22,7 @@ package net.prominic.groovyls.compiler.util;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import net.prominic.lsp.utils.Ranges;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -127,7 +128,7 @@ public class GroovyASTUtils {
         return null;
     }
 
-    public static List<ASTNode> getReferences(ASTNode node, ASTNodeVisitor ast) {
+    public static List<ASTNode> getReferences(ASTNode node, ASTNodeVisitor ast, Position currentPosition) {
         ASTNode definitionNode = getDefinition(node, true, ast);
         if (definitionNode == null) {
             return Collections.emptyList();
@@ -135,6 +136,22 @@ public class GroovyASTUtils {
 
         if(node.getLineNumber() == -1 || node.getColumnNumber() == -1){
             return new ArrayList<>();
+        }
+
+
+        if((definitionNode instanceof Variable) && currentPosition !=null){
+            ClassNode variableType = tryToResolveOriginalClassNode(((Variable) definitionNode).getOriginType(),true,ast);
+            FieldNode variableField = ((PropertyNode) definitionNode).getField(); //Get field from property
+
+            Range typeRange = variableType==null?null:GroovyLanguageServerUtils.astNodeToRange(variableType);
+            Range fieldRange = variableField==null?null:GroovyLanguageServerUtils.astNodeToRange(variableField);
+
+            // Give preference to variable where possible
+            if(fieldRange !=null && Ranges.contains(fieldRange,currentPosition)){
+                definitionNode = variableField;
+            }else if(typeRange!=null && Ranges.contains(typeRange,currentPosition)){
+                definitionNode = variableField;
+            }
         }
 
         ArrayList<ASTNode> outNodes = new ArrayList<>();
@@ -395,6 +412,34 @@ public class GroovyASTUtils {
                         && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
 
             }
+        } else if (declaringNode instanceof FieldNode) {
+           if (otherNode instanceof FieldNode){
+               FieldNode dn = (FieldNode) declaringNode;
+               FieldNode on = (FieldNode) otherNode;
+               return on.getName().equals(dn.getName()) && on.getOriginType().equals(dn.getOriginType())
+                       && on.getOwner().equals(dn.getOwner())
+                       && on.getLineNumber() == dn.getLineNumber() && on.getColumnNumber() == dn.getColumnNumber()
+                       && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
+           } else if (otherNode instanceof PropertyNode) {
+               FieldNode dn = (FieldNode) declaringNode;
+               FieldNode on = ((PropertyNode) otherNode).getField();
+               if(on!=null) {
+                   return on.getName().equals(dn.getName()) && on.getOriginType().equals(dn.getOriginType())
+                           && on.getOwner().equals(dn.getOwner())
+                           && on.getLineNumber() == dn.getLineNumber() && on.getColumnNumber() == dn.getColumnNumber()
+                           && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
+               }
+           }
+           else if(otherNode instanceof PropertyExpression){
+               FieldNode dn = (FieldNode) declaringNode;
+               FieldNode on = GroovyASTUtils.getFieldFromExpression((PropertyExpression) otherNode,ast);
+               if(on!=null) {
+                   return on.getName().equals(dn.getName()) && on.getOriginType().equals(dn.getOriginType())
+                           && on.getOwner().equals(dn.getOwner())
+                           && on.getLineNumber() == dn.getLineNumber() && on.getColumnNumber() == dn.getColumnNumber()
+                           && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
+           }
+        }
         }
 
         return false;
