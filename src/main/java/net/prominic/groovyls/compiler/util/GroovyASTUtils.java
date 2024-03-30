@@ -164,10 +164,6 @@ public class GroovyASTUtils {
             }
         }
         return outNodes;
-//        return ast.getNodes().stream().filter(otherNode -> {
-//            ASTNode otherDefinition = getDefinition(otherNode, false, ast);
-//            return definitionNode.equals(otherDefinition) && node.getLineNumber() != -1 && node.getColumnNumber() != -1;
-//        }).collect(Collectors.toList());
     }
 
     private static ClassNode tryToResolveOriginalClassNode(ClassNode node, boolean strict, ASTNodeVisitor ast) {
@@ -443,46 +439,5 @@ public class GroovyASTUtils {
         }
 
         return false;
-
-//        else if (node instanceof ConstructorCallExpression) {
-//            ConstructorCallExpression callExpression = (ConstructorCallExpression) node;
-//            return GroovyASTUtils.getMethodFromCallExpression(callExpression, astVisitor);
-//        } else if (node instanceof DeclarationExpression) {
-//            DeclarationExpression declExpression = (DeclarationExpression) node;
-//            if (!declExpression.isMultipleAssignmentDeclaration()) {
-//                ClassNode originType = declExpression.getVariableExpression().getOriginType();
-//                return tryToResolveOriginalClassNode(originType, strict, astVisitor);
-//            }
-//        } else if (node instanceof ClassExpression) {
-//            ClassExpression classExpression = (ClassExpression) node;
-//            return tryToResolveOriginalClassNode(classExpression.getType(), strict, astVisitor);
-//        } else if (node instanceof ImportNode) {
-//            ImportNode importNode = (ImportNode) node;
-//            return tryToResolveOriginalClassNode(importNode.getType(), strict, astVisitor);
-//        } else if (node instanceof MethodNode) {
-//            return node;
-//        } else if (node instanceof ConstantExpression && parentNode != null) {
-//            if (parentNode instanceof MethodCallExpression) {
-//                MethodCallExpression methodCallExpression = (MethodCallExpression) parentNode;
-//                return GroovyASTUtils.getMethodFromCallExpression(methodCallExpression, astVisitor);
-//            } else if (parentNode instanceof PropertyExpression) {
-//                PropertyExpression propertyExpression = (PropertyExpression) parentNode;
-//                PropertyNode propNode = GroovyASTUtils.getPropertyFromExpression(propertyExpression, astVisitor);
-//                if (propNode != null) {
-//                    return propNode;
-//                }
-//                return GroovyASTUtils.getFieldFromExpression(propertyExpression, astVisitor);
-//            }
-//        } else if (node instanceof VariableExpression) {
-//            VariableExpression variableExpression = (VariableExpression) node;
-//            Variable accessedVariable = variableExpression.getAccessedVariable();
-//            if (accessedVariable instanceof ASTNode) {
-//                return (ASTNode) accessedVariable;
-//            }
-//            // DynamicVariable is not an ASTNode, so skip it
-//            return null;
-//        } else if (node instanceof Variable) {
-//            return node;
-//        }
     }
 }
