@@ -153,9 +153,11 @@ public class CompletionProvider {
 
 		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(importNode, ModuleNode.class,
 				ast);
-		String enclosingPackageName = enclosingModule.getPackageName();
-		List<String> importNames = enclosingModule.getImports().stream()
-				.map(otherImportNode -> otherImportNode.getClassName()).collect(Collectors.toList());
+
+		String enclosingPackageName = enclosingModule != null ? enclosingModule.getPackageName() : null;
+		List<String> importNames = enclosingModule != null ? enclosingModule.getImports().stream()
+				.map(otherImportNode -> otherImportNode.getClassName()).collect(Collectors.toList())
+				: Collections.emptyList();
 
 		List<CompletionItem> localClassItems = ast.getClassNodes().stream().filter(classNode -> {
 			String packageName = classNode.getPackageName();
@@ -408,9 +410,11 @@ public class CompletionProvider {
 
 		ModuleNode enclosingModule = (ModuleNode) GroovyASTUtils.getEnclosingNodeOfType(offsetNode, ModuleNode.class,
 				ast);
-		String enclosingPackageName = enclosingModule.getPackageName();
-		List<String> importNames = enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
-				.collect(Collectors.toList());
+		String enclosingPackageName = enclosingModule != null ? enclosingModule.getPackageName() : null;
+		List<String> importNames = enclosingModule != null
+				? enclosingModule.getImports().stream().map(importNode -> importNode.getClassName())
+						.collect(Collectors.toList())
+				: Collections.emptyList();
 
 		List<CompletionItem> localClassItems = ast.getClassNodes().stream().filter(classNode -> {
 			if (isIncomplete) {
