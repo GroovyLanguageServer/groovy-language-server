@@ -60,8 +60,15 @@ public class GroovyLanguageServerUtils {
 	}
 
 	public static Range syntaxExceptionToRange(SyntaxException exception) {
-		return new Range(createGroovyPosition(exception.getStartLine(), exception.getStartColumn()),
-				createGroovyPosition(exception.getEndLine(), exception.getEndColumn()));
+		Position start = createGroovyPosition(exception.getStartLine(), exception.getStartColumn());
+		if (start == null) {
+			return null;
+		}
+		Position end = createGroovyPosition(exception.getEndLine(), exception.getEndColumn())
+		if (end == null) {
+			return null;
+		}
+		return new Range(start, end);
 	}
 
 	/**
