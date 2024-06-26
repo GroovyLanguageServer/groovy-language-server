@@ -234,6 +234,10 @@ public class GroovyASTUtils {
             if (propNode != null) {
                 return getTypeOfNode(propNode, astVisitor);
             }
+            FieldNode fieldNode = GroovyASTUtils.getFieldFromExpression(expression, astVisitor);
+            if (fieldNode != null) {
+                return getTypeOfNode(fieldNode, astVisitor);
+            }
             return expression.getType();
         } else if (node instanceof Variable) {
             Variable var = (Variable) node;
