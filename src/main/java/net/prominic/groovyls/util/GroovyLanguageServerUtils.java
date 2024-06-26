@@ -64,7 +64,7 @@ public class GroovyLanguageServerUtils {
 		if (start == null) {
 			return null;
 		}
-		Position end = createGroovyPosition(exception.getEndLine(), exception.getEndColumn())
+		Position end = createGroovyPosition(exception.getEndLine(), exception.getEndColumn());
 		if (end == null) {
 			return null;
 		}
