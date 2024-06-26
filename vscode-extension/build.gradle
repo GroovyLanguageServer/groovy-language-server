@@ -12,6 +12,8 @@ task copyJar(type: Copy) {
 
 task copyLocal(type: Copy) {
     from "$projectDir/package.json"
+    from "$projectDir/LICENSE"
+    from "$projectDir/README.md"
     into "$buildDir"
 }
 
