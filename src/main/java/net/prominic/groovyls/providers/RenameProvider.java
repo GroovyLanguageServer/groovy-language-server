@@ -81,7 +81,7 @@ public class RenameProvider {
 			return CompletableFuture.completedFuture(workspaceEdit);
 		}
 
-		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast);
+		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast, position);
 		references.forEach(node -> {
 			URI uri = ast.getURI(node);
 			if (uri == null) {
