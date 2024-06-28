@@ -489,6 +489,11 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 						SyntaxErrorMessage syntaxErrorMessage = (SyntaxErrorMessage) message;
 						SyntaxException cause = syntaxErrorMessage.getCause();
 						Range range = GroovyLanguageServerUtils.syntaxExceptionToRange(cause);
+						if (range == null) {
+							// range can't be null in a Diagnostic, so we need
+							// a fallback
+							range = new Range(new Position(0, 0), new Position(0, 0));
+						}
 						Diagnostic diagnostic = new Diagnostic();
 						diagnostic.setRange(range);
 						diagnostic.setSeverity(cause.isFatal() ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning);
