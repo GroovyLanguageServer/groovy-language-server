@@ -23,17 +23,17 @@
   ],
   "main": "extension",
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.92.0"
   },
   "devDependencies": {
-    "@types/node": "^20.14.2",
-    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.16.3",
+    "@types/vscode": "^1.92.0",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.4.5",
-    "@vscode/vsce": "^2.27.0",
+    "typescript": "^5.5.4",
+    "@vscode/vsce": "^3.0.0",
     "vscode-jsonrpc": "^8.2.1",
     "vscode-languageclient": "^9.0.1",
-    "webpack": "^5.92.0",
+    "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
   },
   "activationEvents": [
