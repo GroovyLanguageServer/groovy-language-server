@@ -19,20 +19,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.util;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.ImportNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Variable;
+import net.prominic.lsp.utils.Ranges;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -59,7 +50,11 @@ public class GroovyASTUtils {
             if (nodeType.isInstance(current)) {
                 return current;
             }
-            current = astVisitor.getParent(current);
+            ASTNode newParent = astVisitor.getParent(current);
+            if(newParent!=null && newParent.equals(current)){
+                break;
+            }
+            current = newParent;
         }
         return null;
     }
@@ -133,15 +128,42 @@ public class GroovyASTUtils {
         return null;
     }
 
-    public static List<ASTNode> getReferences(ASTNode node, ASTNodeVisitor ast) {
+    public static List<ASTNode> getReferences(ASTNode node, ASTNodeVisitor ast, Position currentPosition) {
         ASTNode definitionNode = getDefinition(node, true, ast);
         if (definitionNode == null) {
             return Collections.emptyList();
         }
-        return ast.getNodes().stream().filter(otherNode -> {
-            ASTNode otherDefinition = getDefinition(otherNode, false, ast);
-            return definitionNode.equals(otherDefinition) && node.getLineNumber() != -1 && node.getColumnNumber() != -1;
-        }).collect(Collectors.toList());
+
+        if(node.getLineNumber() == -1 || node.getColumnNumber() == -1){
+            return new ArrayList<>();
+        }
+
+
+        if((definitionNode instanceof Variable) && currentPosition !=null){
+            ClassNode variableType = tryToResolveOriginalClassNode(((Variable) definitionNode).getOriginType(),true,ast);
+            FieldNode variableField = ((PropertyNode) definitionNode).getField(); //Get field from property
+
+            Range typeRange = variableType==null?null:GroovyLanguageServerUtils.astNodeToRange(variableType);
+            Range fieldRange = variableField==null?null:GroovyLanguageServerUtils.astNodeToRange(variableField);
+
+            // Give preference to variable where possible
+            if(fieldRange !=null && Ranges.contains(fieldRange,currentPosition)){
+                definitionNode = variableField;
+            }else if(typeRange!=null && Ranges.contains(typeRange,currentPosition)){
+                definitionNode = variableField;
+            }
+        }
+
+        ArrayList<ASTNode> outNodes = new ArrayList<>();
+        for (ASTNode otherNode : ast.getNodes()){
+            if(otherNode.getLineNumber()!=-1 && otherNode.getColumnNumber() != -1){
+                ASTNode otherDefinition = getDefinition(otherNode,false,ast);
+                if(otherDefinition!=null && isAnnotatedNodeEqual(definitionNode,otherDefinition,ast)){
+                    outNodes.add(otherNode);
+                }
+            }
+        }
+        return outNodes;
     }
 
     private static ClassNode tryToResolveOriginalClassNode(ClassNode node, boolean strict, ASTNodeVisitor ast) {
@@ -376,5 +398,50 @@ public class GroovyASTUtils {
         }
         Position position = new Position(nodeRange.getEnd().getLine() + 1, 0);
         return new Range(position, position);
+    }
+
+    static boolean isAnnotatedNodeEqual(ASTNode declaringNode, ASTNode otherNode,ASTNodeVisitor ast){
+        if(Objects.equals(declaringNode,otherNode)){
+            return true;
+        }else if (declaringNode instanceof MethodNode) {
+            if(otherNode instanceof  MethodNode){
+                MethodNode dn = (MethodNode) declaringNode;
+                MethodNode on = (MethodNode) otherNode;
+                return on.getName().equals(dn.getName()) && on.getDeclaringClass().equals(dn.getDeclaringClass())
+                        && on.getLineNumber() == dn.getLineNumber() && on.getColumnNumber() == dn.getColumnNumber()
+                        && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
+
+            }
+        } else if (declaringNode instanceof FieldNode) {
+           if (otherNode instanceof FieldNode){
+               FieldNode dn = (FieldNode) declaringNode;
+               FieldNode on = (FieldNode) otherNode;
+               return on.getName().equals(dn.getName()) && on.getOriginType().equals(dn.getOriginType())
+                       && on.getOwner().equals(dn.getOwner())
+                       && on.getLineNumber() == dn.getLineNumber() && on.getColumnNumber() == dn.getColumnNumber()
+                       && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
+           } else if (otherNode instanceof PropertyNode) {
+               FieldNode dn = (FieldNode) declaringNode;
+               FieldNode on = ((PropertyNode) otherNode).getField();
+               if(on!=null) {
+                   return on.getName().equals(dn.getName()) && on.getOriginType().equals(dn.getOriginType())
+                           && on.getOwner().equals(dn.getOwner())
+                           && on.getLineNumber() == dn.getLineNumber() && on.getColumnNumber() == dn.getColumnNumber()
+                           && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
+               }
+           }
+           else if(otherNode instanceof PropertyExpression){
+               FieldNode dn = (FieldNode) declaringNode;
+               FieldNode on = GroovyASTUtils.getFieldFromExpression((PropertyExpression) otherNode,ast);
+               if(on!=null) {
+                   return on.getName().equals(dn.getName()) && on.getOriginType().equals(dn.getOriginType())
+                           && on.getOwner().equals(dn.getOwner())
+                           && on.getLineNumber() == dn.getLineNumber() && on.getColumnNumber() == dn.getColumnNumber()
+                           && on.getLastLineNumber() == dn.getLastLineNumber() && on.getLastColumnNumber() == dn.getLastColumnNumber();
+           }
+        }
+        }
+
+        return false;
     }
 }
