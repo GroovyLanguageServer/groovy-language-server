@@ -25,11 +25,13 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
@@ -65,9 +67,13 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 		classLoader = null;
 	}
 
-	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker) {
+	public GroovyLSCompilationUnit create(Path workspaceRoot, Path targetDirectory,List<Path> ignoredDirectory, FileContentsTracker fileContentsTracker) {
 		if (config == null) {
 			config = getConfiguration();
+		}
+
+		if(ignoredDirectory==null){
+			ignoredDirectory=new ArrayList<>();
 		}
 
 		if (classLoader == null) {
@@ -94,9 +100,14 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 			compilationUnit.removeSources(sourcesToRemove);
 		}
 
+		if(targetDirectory!=null){
+			compilationUnit.getConfiguration().setTargetDirectory(targetDirectory.toFile());
+		}
+
 		if (workspaceRoot != null) {
-			addDirectoryToCompilationUnit(workspaceRoot, compilationUnit, fileContentsTracker, changedUris);
-		} else {
+			addDirectoryToCompilationUnit(workspaceRoot, ignoredDirectory, compilationUnit, fileContentsTracker, changedUris);
+		}
+		else {
 			final Set<URI> urisToAdd = changedUris;
 			fileContentsTracker.getOpenURIs().forEach(uri -> {
 				// if we're only tracking changes, skip all files that haven't
@@ -157,11 +168,30 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 		}
 	}
 
-	protected void addDirectoryToCompilationUnit(Path dirPath, GroovyLSCompilationUnit compilationUnit,
+	protected void addDirectoryToCompilationUnit(Path dirPath, List<Path> ignoredPaths, GroovyLSCompilationUnit compilationUnit,
 			FileContentsTracker fileContentsTracker, Set<URI> changedUris) {
-		try {
+
+        File targetDirectory = compilationUnit.getConfiguration().getTargetDirectory();
+
+        boolean testTargetDir = targetDirectory != null && targetDirectory.exists();
+
+        try {
+            BiPredicate<Path, BasicFileAttributes> matcher = (path, basicFileAttributes) -> {
+                if (testTargetDir && path.startsWith(targetDirectory.toPath())) {
+                    return false;
+                }
+
+                for (Path p : ignoredPaths) {
+                    if (path.startsWith(p)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            };
+
 			if (Files.exists(dirPath)) {
-				Files.walk(dirPath).forEach((filePath) -> {
+				Files.find(dirPath,Integer.MAX_VALUE,matcher).forEach((filePath) -> {
 					if (!filePath.toString().endsWith(FILE_EXTENSION_GROOVY)) {
 						return;
 					}
