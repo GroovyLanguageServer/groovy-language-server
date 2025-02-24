@@ -255,6 +255,34 @@ class GroovyServicesTypeDefinitionTests {
 		Assertions.assertEquals(3, location.getRange().getEnd().getLine());
 		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
 	}
+	@Test
+	void testMemberAdjacentMethodTypeDefinitionFromDeclaration() throws Exception {
+		Path filePath = srcRoot.resolve("Definitions.groovy");
+		String uri = filePath.toUri().toString();
+		StringBuilder contents = new StringBuilder();
+		contents.append("class TypeDefinitions {\n");
+		contents.append("    public TypeDefinitions memberMethod() {\n");
+		contents.append("    }\n");
+		contents.append("}\n");
+		contents.append("\n");
+		contents.append("class Util {\n");
+		contents.append("      TypeDefinitions getTypeDef(){\n");
+		contents.append("      }\n");
+		contents.append("}\n");
+		TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_GROOVY, 1, contents.toString());
+		services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+		TextDocumentIdentifier textDocument = new TextDocumentIdentifier(uri);
+		Position position = new Position(6, 12);
+		List<? extends Location> locations = services.typeDefinition(new TypeDefinitionParams(textDocument, position))
+				.get().getLeft();
+		Assertions.assertEquals(1, locations.size());
+		Location location = locations.get(0);
+		Assertions.assertEquals(uri, location.getUri());
+		Assertions.assertEquals(0, location.getRange().getStart().getLine());
+		Assertions.assertEquals(0, location.getRange().getStart().getCharacter());
+		Assertions.assertEquals(3, location.getRange().getEnd().getLine());
+		Assertions.assertEquals(1, location.getRange().getEnd().getCharacter());
+	}
 
 	@Test
 	void testMemberMethodTypeDefinitionFromCall() throws Exception {

@@ -54,9 +54,12 @@ public class ReferenceProvider {
 			return CompletableFuture.completedFuture(Collections.emptyList());
 		}
 
-		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast);
+		List<ASTNode> references = GroovyASTUtils.getReferences(offsetNode, ast, position);
 		List<Location> locations = references.stream().map(node -> {
 			URI uri = ast.getURI(node);
+			if(uri == null){
+				return null;
+			}
 			return GroovyLanguageServerUtils.astNodeToLocation(node, uri);
 		}).filter(location -> location != null).collect(Collectors.toList());
 
