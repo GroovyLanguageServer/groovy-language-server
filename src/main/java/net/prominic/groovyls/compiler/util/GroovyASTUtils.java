@@ -19,6 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 package net.prominic.groovyls.compiler.util;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -175,10 +176,38 @@ public class GroovyASTUtils {
     public static List<FieldNode> getFieldsForLeftSideOfPropertyExpression(Expression node, ASTNodeVisitor astVisitor) {
         ClassNode classNode = getTypeOfNode(node, astVisitor);
         if (classNode != null) {
+            List<ClassNode> classNodes = new ArrayList<>();
+            classNodes.add(classNode);
+
             boolean statics = node instanceof ClassExpression;
-            return classNode.getFields().stream().filter(fieldNode -> {
-                return statics ? fieldNode.isStatic() : !fieldNode.isStatic();
-            }).collect(Collectors.toList());
+
+            List<FieldNode> result = new ArrayList<>();
+            int i = 0;
+            while (i < classNodes.size()) {
+                ClassNode current = classNodes.get(i);
+
+                result.addAll(current.getFields().stream().filter(fieldNode -> {
+                    return statics ? fieldNode.isStatic() : !fieldNode.isStatic();
+                }).collect(Collectors.toList()));
+
+                if (current.isInterface()) {
+                    for (ClassNode interfaceNode : current.getInterfaces()) {
+                        classNodes.add(interfaceNode);
+                    }
+                } else {
+                    ClassNode superClassNode = null;
+                    try {
+                        superClassNode = current.getSuperClass();
+                    } catch (NoClassDefFoundError e) {
+                        // this is fine, we'll just treat it as null
+                    }
+                    if (superClassNode != null) {
+                        classNodes.add(superClassNode);
+                    }
+                }
+                i++;
+            }
+            return result;
         }
         return Collections.emptyList();
     }
@@ -187,10 +216,37 @@ public class GroovyASTUtils {
             ASTNodeVisitor astVisitor) {
         ClassNode classNode = getTypeOfNode(node, astVisitor);
         if (classNode != null) {
+            List<ClassNode> classNodes = new ArrayList<>();
+            classNodes.add(classNode);
+
             boolean statics = node instanceof ClassExpression;
-            return classNode.getProperties().stream().filter(propNode -> {
-                return statics ? propNode.isStatic() : !propNode.isStatic();
-            }).collect(Collectors.toList());
+
+            List<PropertyNode> result = new ArrayList<>();
+            int i = 0;
+            while (i < classNodes.size()) {
+                ClassNode current = classNodes.get(i);
+
+                result.addAll(current.getProperties().stream().filter(propNode -> {
+                    return statics ? propNode.isStatic() : !propNode.isStatic();
+                }).collect(Collectors.toList()));
+
+                if (current.isInterface()) {
+                    for (ClassNode interfaceNode : current.getInterfaces()) {
+                        classNodes.add(interfaceNode);
+                    }
+                } else {
+                    ClassNode superClassNode = null;
+                    try {
+                        superClassNode = current.getSuperClass();
+                    } catch (NoClassDefFoundError e) {
+                        // this is fine, we'll just treat it as null
+                    }
+                    if (superClassNode != null) {
+                        classNodes.add(superClassNode);
+                    }
+                }
+                i++;
+            }
         }
         return Collections.emptyList();
     }
@@ -199,10 +255,38 @@ public class GroovyASTUtils {
             ASTNodeVisitor astVisitor) {
         ClassNode classNode = getTypeOfNode(node, astVisitor);
         if (classNode != null) {
+            List<ClassNode> classNodes = new ArrayList<>();
+            classNodes.add(classNode);
+
             boolean statics = node instanceof ClassExpression;
-            return classNode.getMethods().stream().filter(methodNode -> {
-                return statics ? methodNode.isStatic() : !methodNode.isStatic();
-            }).collect(Collectors.toList());
+
+            List<MethodNode> result = new ArrayList<>();
+            int i = 0;
+            while (i < classNodes.size()) {
+                ClassNode current = classNodes.get(i);
+
+                result.addAll(current.getMethods().stream().filter(methodNode -> {
+                    return statics ? methodNode.isStatic() : !methodNode.isStatic();
+                }).collect(Collectors.toList()));
+
+                if (current.isInterface()) {
+                    for (ClassNode interfaceNode : current.getInterfaces()) {
+                        classNodes.add(interfaceNode);
+                    }
+                } else {
+                    ClassNode superClassNode = null;
+                    try {
+                        superClassNode = current.getSuperClass();
+                    } catch (NoClassDefFoundError e) {
+                        // this is fine, we'll just treat it as null
+                    }
+                    if (superClassNode != null) {
+                        classNodes.add(superClassNode);
+                    }
+                }
+                i++;
+            }
+            return result;
         }
         return Collections.emptyList();
     }
