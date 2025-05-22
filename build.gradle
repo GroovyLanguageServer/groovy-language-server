@@ -29,11 +29,11 @@ repositories  {
 dependencies {
   implementation "org.eclipse.lsp4j:org.eclipse.lsp4j:0.12.0"
   implementation "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.12.0"
-  implementation "org.apache.groovy:groovy:4.0.5"
-  implementation "com.google.code.gson:gson:2.8.7"
-  implementation "io.github.classgraph:classgraph:4.8.138"
-  testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.2"
-  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.2"
+  implementation "org.apache.groovy:groovy:4.0.26"
+  implementation "com.google.code.gson:gson:2.13.1"
+  implementation "io.github.classgraph:classgraph:4.8.179"
+  testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.4"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.11.4"
 }
 
 // assuming that Moonshine-IDE is checked out in a folder that has the same
