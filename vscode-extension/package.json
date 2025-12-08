@@ -21,7 +21,7 @@
     "Groovy",
     "Grails"
   ],
-  "main": "extension",
+  "main": "./build/extension.js",
   "engines": {
     "vscode": "^1.99.0"
   },
@@ -77,6 +77,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "groovy.debug.serverPort": {
+          "type": "number",
+          "default": 0,
+          "description": "If set, connect to an existing Groovy LSP server on this TCP port instead of starting one automatically."
         }
       }
     }

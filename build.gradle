@@ -24,14 +24,20 @@ shadowJar {
 
 repositories  {
   mavenCentral()
+  maven { url 'https://repo.gradle.org/gradle/libs-releases' }
 }
 
+def lsp4jVersion = "0.24.0"
+
 dependencies {
-  implementation "org.eclipse.lsp4j:org.eclipse.lsp4j:0.12.0"
-  implementation "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.12.0"
+  implementation "org.eclipse.lsp4j:org.eclipse.lsp4j:$lsp4jVersion"
+  implementation "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:$lsp4jVersion"
+  implementation 'org.gradle:gradle-tooling-api:8.10.2'
   implementation "org.apache.groovy:groovy:4.0.26"
   implementation "com.google.code.gson:gson:2.13.1"
   implementation "io.github.classgraph:classgraph:4.8.179"
+  implementation "org.slf4j:slf4j-api:2.0.17"
+  implementation "org.slf4j:slf4j-simple:2.0.17"
   testImplementation "org.junit.jupiter:junit-jupiter-api:5.11.4"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.11.4"
   testRuntimeOnly "org.junit.platform:junit-platform-launcher:1.14.1"

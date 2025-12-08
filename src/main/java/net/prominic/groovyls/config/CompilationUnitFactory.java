@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Prominic.NET, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,24 +138,31 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 				mustBeDirectory = true;
 			}
 
-			File file = new File(entry);
-			if (!file.exists()) {
-				continue;
-			}
-			if (file.isDirectory()) {
-				for (File child : file.listFiles()) {
-					if (!child.getName().endsWith(".jar") || !child.isFile()) {
-						continue;
-					}
-					result.add(child.getPath());
-				}
-			} else if (!mustBeDirectory && file.isFile()) {
-				if (file.getName().endsWith(".jar")) {
-					result.add(entry);
-				}
-			}
-		}
-	}
+            File file = new File(entry);
+            if (!file.exists()) {
+                continue;
+            }
+
+            if (file.isDirectory()) {
+                // Always add directories (important for build/classes output)
+                result.add(file.getPath());
+
+                // And if user used '*', include jars inside
+                if (mustBeDirectory) {
+                    File[] children = file.listFiles();
+                    if (children != null) {
+                        for (File child : children) {
+                            if (child.isFile() && child.getName().endsWith(".jar")) {
+                                result.add(child.getPath());
+                            }
+                        }
+                    }
+                }
+            } else if (!mustBeDirectory && file.isFile() && file.getName().endsWith(".jar")) {
+                result.add(entry);
+            }
+        }
+    }
 
 	protected void addDirectoryToCompilationUnit(Path dirPath, GroovyLSCompilationUnit compilationUnit,
 			FileContentsTracker fileContentsTracker, Set<URI> changedUris) {

@@ -20,10 +20,13 @@
 import findJava from "./utils/findJava";
 import * as path from "path";
 import * as vscode from "vscode";
+import * as net from "net";
 import {
   LanguageClient,
   LanguageClientOptions,
   Executable,
+  ServerOptions,
+  StreamInfo,
 } from "vscode-languageclient/node";
 
 const MISSING_JAVA_ERROR =
@@ -39,8 +42,32 @@ let extensionContext: vscode.ExtensionContext | null = null;
 let languageClient: LanguageClient | null = null;
 let javaPath: string | null = null;
 
+export function activate(context: vscode.ExtensionContext) {
+  extensionContext = context;
+  javaPath = findJava();
+
+  vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration);
+
+  vscode.commands.registerCommand(
+    "groovy.restartServer",
+    restartLanguageServer
+  );
+
+  startLanguageServer();
+}
+
+export function deactivate(): Thenable<void> | undefined {
+  if (!languageClient) {
+    return undefined;
+  }
+  return languageClient.stop();
+}
+
 function onDidChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
-  if (event.affectsConfiguration("groovy.java.home")) {
+  if (
+    event.affectsConfiguration("groovy.java.home") ||
+    event.affectsConfiguration("groovy.debug.serverPort")
+  ) {
     javaPath = findJava();
     //we're going to try to kill the language server and then restart
     //it with the new settings
@@ -73,47 +100,68 @@ function restartLanguageServer() {
   );
 }
 
-export function activate(context: vscode.ExtensionContext) {
-  extensionContext = context;
-  javaPath = findJava();
-  vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration);
-
-  vscode.commands.registerCommand(
-    "groovy.restartServer",
-    restartLanguageServer
-  );
-
-  startLanguageServer();
-}
-
-export function deactivate() {
-  extensionContext = null;
-}
-
 function startLanguageServer() {
   vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window },
     (progress) => {
       return new Promise<void>(async (resolve, reject) => {
         if (!extensionContext) {
-          //something very bad happened!
           resolve();
           vscode.window.showErrorMessage(STARTUP_ERROR);
           return;
         }
-        if (!javaPath) {
-          resolve();
-          let settingsJavaHome = vscode.workspace
-            .getConfiguration("groovy")
-            .get("java.home") as string;
-          if (settingsJavaHome) {
-            vscode.window.showErrorMessage(INVALID_JAVA_ERROR);
-          } else {
-            vscode.window.showErrorMessage(MISSING_JAVA_ERROR);
+
+        const config = vscode.workspace.getConfiguration("groovy");
+        const port = config.get<number>("debug.serverPort") ?? 0;
+
+        progress.report({message: INITIALIZING_MESSAGE});
+
+        let serverOptions: ServerOptions;
+
+        if (port > 0) {
+          // === Debug mode: connect to running server ===
+          serverOptions = () => {
+            return new Promise<StreamInfo>((resolve, reject) => {
+              const socket = new net.Socket();
+              socket.connect(port, "127.0.0.1", () => {
+                console.log(`Connected to Groovy LSP on port ${port}`);
+                resolve({reader: socket, writer: socket});
+              });
+              socket.on("error", reject);
+            });
+          };
+        } else {
+          // === Normal mode: launch Java process ===
+          if (!javaPath) {
+            resolve();
+            let settingsJavaHome = config.get<string>("java.home");
+            if (settingsJavaHome) {
+              vscode.window.showErrorMessage(INVALID_JAVA_ERROR);
+            } else {
+              vscode.window.showErrorMessage(MISSING_JAVA_ERROR);
+            }
+            return;
           }
-          return;
+
+          const args = [
+            "-jar",
+            path.resolve(
+              extensionContext.extensionPath,
+              "bin",
+              "groovy-language-server-all.jar"
+            ),
+          ];
+
+          //uncomment to allow a debugger to attach to the language server
+          //args.unshift("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005,quiet=y");
+          let executable: Executable = {
+            command: javaPath,
+            args,
+          };
+
+          serverOptions = executable;
         }
-        progress.report({ message: INITIALIZING_MESSAGE });
+
         let clientOptions: LanguageClientOptions = {
           documentSelector: [{ scheme: "file", language: "groovy" }],
           synchronize: {
@@ -133,33 +181,20 @@ function startLanguageServer() {
             protocol2Code: (value) => vscode.Uri.parse(value),
           },
         };
-        let args = [
-          "-jar",
-          path.resolve(
-            extensionContext.extensionPath,
-            "bin",
-            "groovy-language-server-all.jar"
-          ),
-        ];
-        //uncomment to allow a debugger to attach to the language server
-        //args.unshift("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005,quiet=y");
-        let executable: Executable = {
-          command: javaPath,
-          args: args,
-        };
+
         languageClient = new LanguageClient(
           "groovy",
           "Groovy Language Server",
-          executable,
+          serverOptions,
           clientOptions
         );
+
         try {
           await languageClient.start();
         } catch (e) {
-          resolve();
           vscode.window.showErrorMessage(STARTUP_ERROR);
-          return;
         }
+
         resolve();
       });
     }
