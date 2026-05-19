@@ -38,8 +38,7 @@ const LABEL_RELOAD_WINDOW = "Reload Window";
 let extensionContext: vscode.ExtensionContext | null = null;
 let languageClient: LanguageClient | null = null;
 let javaPath: string | null = null;
-
-const channel = vscode.window.createOutputChannel('Groovy');
+let groovyOutputChannel: vscode.OutputChannel | undefined;
 
 function onDidChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
   if (event.affectsConfiguration("groovy.java.home")) {
@@ -77,6 +76,7 @@ function restartLanguageServer() {
 
 export function activate(context: vscode.ExtensionContext) {
   extensionContext = context;
+  groovyOutputChannel = vscode.window.createOutputChannel("Groovy");
   javaPath = findJava();
   vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration);
 
@@ -134,7 +134,7 @@ function startLanguageServer() {
             //this is just the default behavior, but we need to define both
             protocol2Code: (value) => vscode.Uri.parse(value),
           },
-          outputChannel: channel
+          outputChannel: groovyOutputChannel
         };
         let args = [
           "-jar",
