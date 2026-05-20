@@ -133,7 +133,13 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 
 		for (String entry : additionalClasspathList) {
 			boolean mustBeDirectory = false;
-			if (entry.endsWith("*")) {
+			boolean recursive = false;
+			
+			if (entry.endsWith("**")) {
+				entry = entry.substring(0, entry.length() - 2);
+				mustBeDirectory = true;
+				recursive = true;
+			} else if (entry.endsWith("*")) {
 				entry = entry.substring(0, entry.length() - 1);
 				mustBeDirectory = true;
 			}
@@ -143,16 +149,35 @@ public class CompilationUnitFactory implements ICompilationUnitFactory {
 				continue;
 			}
 			if (file.isDirectory()) {
-				for (File child : file.listFiles()) {
-					if (!child.getName().endsWith(".jar") || !child.isFile()) {
-						continue;
+				if (recursive) {
+					addJarsRecursively(file, result);
+				} else {
+					for (File child : file.listFiles()) {
+						if (!child.getName().endsWith(".jar") || !child.isFile()) {
+							continue;
+						}
+						result.add(child.getPath());
 					}
-					result.add(child.getPath());
 				}
+				
 			} else if (!mustBeDirectory && file.isFile()) {
 				if (file.getName().endsWith(".jar")) {
 					result.add(entry);
 				}
+			}
+		}
+	}
+
+	private void addJarsRecursively(File directory, List<String> classpathList) {
+		if (directory == null || !directory.exists() || !directory.isDirectory()) {
+			return;
+		}
+
+		for (File child : directory.listFiles()) {
+			if (child.isDirectory()) {
+				addJarsRecursively(child, classpathList);
+			} else if (child.getName().endsWith(".jar")) {
+				classpathList.add(child.getPath());
 			}
 		}
 	}
