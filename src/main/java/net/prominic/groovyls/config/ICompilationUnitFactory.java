@@ -39,5 +39,5 @@ public interface ICompilationUnitFactory {
 	/**
 	 * Returns a compilation unit.
 	 */
-	public GroovyLSCompilationUnit create(Path workspaceRoot, FileContentsTracker fileContentsTracker);
+	public GroovyLSCompilationUnit create(Path workspaceRoot,Path targetDirectory, List<Path> ignoredDirectory, FileContentsTracker fileContentsTracker);
 }
