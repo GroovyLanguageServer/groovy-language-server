@@ -79,6 +79,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TypeDefinitionParams;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
+import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.eclipse.lsp4j.WorkspaceSymbolParams;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -359,7 +360,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	}
 
 	@Override
-	public CompletableFuture<List<? extends SymbolInformation>> symbol(WorkspaceSymbolParams params) {
+	public CompletableFuture<Either<List<? extends SymbolInformation>, List<? extends WorkspaceSymbol>>> symbol(WorkspaceSymbolParams params) {
 		WorkspaceSymbolProvider provider = new WorkspaceSymbolProvider(astVisitor);
 		return provider.provideWorkspaceSymbols(params.getQuery());
 	}

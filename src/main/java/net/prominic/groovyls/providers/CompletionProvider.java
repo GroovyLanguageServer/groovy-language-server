@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -48,6 +49,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.eclipse.lsp4j.CompletionContext;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
+import org.eclipse.lsp4j.CompletionItemLabelDetails;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
@@ -293,6 +295,9 @@ public class CompletionProvider {
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}
+			CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
+			labelDetails.setDescription(property.getType().getNameWithoutPackage());
+			item.setLabelDetails(labelDetails);
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(propItems);
@@ -312,6 +317,9 @@ public class CompletionProvider {
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
 			}
+			CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
+			labelDetails.setDescription(field.getType().getNameWithoutPackage());
+			item.setLabelDetails(labelDetails);
 			return item;
 		}).collect(Collectors.toList());
 		items.addAll(fieldItems);
@@ -330,6 +338,17 @@ public class CompletionProvider {
 		}).map(method -> {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(method.getName());
+			String methodParams = "(";
+			for (Parameter p : method.getParameters()) {
+				methodParams += p.getType().getNameWithoutPackage() + ' ' + p.getName() + ", ";
+			}
+			if (!methodParams.equals("("))
+				methodParams = methodParams.substring(0, methodParams.length() - 2);
+			methodParams += ')';
+			CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
+			labelDetails.setDetail(methodParams);
+			labelDetails.setDescription(method.getReturnType().getNameWithoutPackage());
+			item.setLabelDetails(labelDetails);
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(method));
 			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(method.getGroovydoc());
 			if (markdownDocs != null) {
@@ -366,6 +385,9 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(variable.getName());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind((ASTNode) variable));
+			CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
+			labelDetails.setDescription(variable.getType().getNameWithoutPackage());
+			item.setLabelDetails(labelDetails);
 			if (variable instanceof AnnotatedNode) {
 				AnnotatedNode annotatedVar = (AnnotatedNode) variable;
 				String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(annotatedVar.getGroovydoc());
@@ -437,7 +459,9 @@ public class CompletionProvider {
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classNode.getNameWithoutPackage());
 			item.setKind(GroovyLanguageServerUtils.astNodeToCompletionItemKind(classNode));
-			item.setDetail(packageName);
+			CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
+			labelDetails.setDescription(packageName);
+			item.setLabelDetails(labelDetails);
 			String markdownDocs = GroovydocUtils.groovydocToMarkdownDescription(classNode.getGroovydoc());
 			if (markdownDocs != null) {
 				item.setDocumentation(new MarkupContent(MarkupKind.MARKDOWN, markdownDocs));
@@ -477,8 +501,10 @@ public class CompletionProvider {
 			String packageName = classInfo.getPackageName();
 			CompletionItem item = new CompletionItem();
 			item.setLabel(classInfo.getSimpleName());
-			item.setDetail(packageName);
 			item.setKind(classInfoToCompletionItemKind(classInfo));
+			CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
+			labelDetails.setDescription(packageName);
+			item.setLabelDetails(labelDetails);
 			if (packageName != null && !packageName.equals(enclosingPackageName) && !importNames.contains(className)) {
 				List<TextEdit> additionalTextEdits = new ArrayList<>();
 				TextEdit addImportEdit = createAddImportTextEdit(className, addImportRange);

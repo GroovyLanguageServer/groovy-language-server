@@ -31,6 +31,8 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.eclipse.lsp4j.SymbolInformation;
+import org.eclipse.lsp4j.WorkspaceSymbol;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 import net.prominic.groovyls.compiler.ast.ASTNodeVisitor;
 import net.prominic.groovyls.compiler.util.GroovyASTUtils;
@@ -43,11 +45,11 @@ public class WorkspaceSymbolProvider {
 		this.ast = ast;
 	}
 
-	public CompletableFuture<List<? extends SymbolInformation>> provideWorkspaceSymbols(String query) {
+	public CompletableFuture<Either<List<? extends SymbolInformation>, List<? extends WorkspaceSymbol>>> provideWorkspaceSymbols(String query) {
 		if (ast == null) {
 			// this shouldn't happen, but let's avoid an exception if something
 			// goes terribly wrong.
-			return CompletableFuture.completedFuture(Collections.emptyList());
+			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
 		String lowerCaseQuery = query.toLowerCase();
 		List<ASTNode> nodes = ast.getNodes();
@@ -92,6 +94,6 @@ public class WorkspaceSymbolProvider {
 			// this should never happen
 			return null;
 		}).filter(symbolInformation -> symbolInformation != null).collect(Collectors.toList());
-		return CompletableFuture.completedFuture(symbols);
+		return CompletableFuture.completedFuture(Either.forLeft(symbols));
 	}
 }
