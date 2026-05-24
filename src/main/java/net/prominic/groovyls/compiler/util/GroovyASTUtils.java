@@ -361,7 +361,9 @@ public class GroovyASTUtils {
             MethodCallExpression methodCallExpr = (MethodCallExpression) node;
             ClassNode leftType = getTypeOfNode(methodCallExpr.getObjectExpression(), astVisitor);
             if (leftType != null) {
-                return leftType.getMethods(methodCallExpr.getMethod().getText());
+                return leftType.getAllDeclaredMethods().stream()
+                        .filter(m -> m.getName().equals(methodCallExpr.getMethod().getText()))
+                        .collect(Collectors.toList());
             }
         } else if (node instanceof ConstructorCallExpression) {
             ConstructorCallExpression constructorCallExpr = (ConstructorCallExpression) node;
