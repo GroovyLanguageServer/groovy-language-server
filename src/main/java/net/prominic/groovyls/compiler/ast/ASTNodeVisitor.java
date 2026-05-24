@@ -621,14 +621,14 @@ public class ASTNodeVisitor extends ClassCodeVisitorSupport {
 		}
 	}
 
-	public void visitShortTernaryExpression(ElvisOperatorExpression node) {
-		pushASTNode(node);
-		try {
-			super.visitShortTernaryExpression(node);
-		} finally {
-			popASTNode();
-		}
-	}
+	// public void visitShortTernaryExpression(ElvisOperatorExpression node) {
+	// 	pushASTNode(node);
+	// 	try {
+	// 		super.visitShortTernaryExpression(node);
+	// 	} finally {
+	// 		popASTNode();
+	// 	}
+	// }
 
 	public void visitPostfixExpression(PostfixExpression node) {
 		pushASTNode(node);
