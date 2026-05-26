@@ -25,9 +25,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
@@ -56,7 +59,7 @@ public class DefinitionProvider {
 		}
 
 		ASTNode definitionNode = GroovyASTUtils.getDefinition(offsetNode, true, ast);
-		if (definitionNode == null || definitionNode.getLineNumber() == -1 || definitionNode.getColumnNumber() == -1) {
+		if (definitionNode == null) {
 			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
 
@@ -67,6 +70,15 @@ public class DefinitionProvider {
 
 		Location location = GroovyLanguageServerUtils.astNodeToLocation(definitionNode, definitionURI);
 		if (location == null) {
+			if (definitionNode instanceof ConstructorNode) {
+				// This will "fall-through" to the if-block below!
+				definitionNode = ((ConstructorNode) definitionNode).getDeclaringClass();
+				definitionURI = ast.getURI(definitionNode);
+			}
+			if (definitionNode instanceof ClassNode) {
+				location = new Location(definitionURI.toString(), new Range(new Position(), new Position(1, 1)));
+				return CompletableFuture.completedFuture(Either.forLeft(Collections.singletonList(location)));
+			}
 			return CompletableFuture.completedFuture(Either.forLeft(Collections.emptyList()));
 		}
 
