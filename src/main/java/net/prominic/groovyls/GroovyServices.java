@@ -1,5 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Copyright 2022 Prominic.NET, Inc.
+// Copyright 2026 trustytrojan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +15,7 @@
 // limitations under the License
 //
 // Author: Prominic.NET, Inc.
+// Author: trustytrojan
 // No warranty of merchantability or fitness of any kind.
 // Use this software at your own risk.
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +73,8 @@ import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
+import org.eclipse.lsp4j.SemanticTokens;
+import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.SignatureHelp;
 import org.eclipse.lsp4j.SignatureHelpParams;
 import org.eclipse.lsp4j.SymbolInformation;
@@ -102,6 +106,7 @@ import net.prominic.groovyls.providers.RenameProvider;
 import net.prominic.groovyls.providers.SignatureHelpProvider;
 import net.prominic.groovyls.providers.TypeDefinitionProvider;
 import net.prominic.groovyls.providers.WorkspaceSymbolProvider;
+import net.prominic.groovyls.providers.SemanticTokensProvider;
 import net.prominic.groovyls.util.FileContentsTracker;
 import net.prominic.groovyls.util.GroovyLanguageServerUtils;
 import net.prominic.lsp.utils.Positions;
@@ -120,6 +125,7 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 	private ScanResult classGraphScanResult = null;
 	private GroovyClassLoader classLoader = null;
 	private URI previousContext = null;
+	private SemanticTokensProvider semanticTokensProvider = null;
 
 	public GroovyServices(ICompilationUnitFactory factory) {
 		compilationUnitFactory = factory;
@@ -356,6 +362,21 @@ public class GroovyServices implements TextDocumentService, WorkspaceService, La
 
 		DocumentSymbolProvider provider = new DocumentSymbolProvider(astVisitor);
 		return provider.provideDocumentSymbols(params.getTextDocument());
+	}
+
+	@Override
+	public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
+		TextDocumentIdentifier textDocument = params.getTextDocument();
+		URI uri = URI.create(textDocument.getUri());
+		recompileIfContextChanged(uri);
+
+		// Ensure semantic tokens provider is initialized
+		if (semanticTokensProvider == null) {
+			semanticTokensProvider = new SemanticTokensProvider(fileContentsTracker, astVisitor);
+		}
+
+		// Provide semantic tokens - GDSL symbols are injected before LSP transmission
+		return CompletableFuture.completedFuture(semanticTokensProvider.provideFull(textDocument));
 	}
 
 	@Override
